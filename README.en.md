@@ -26,8 +26,3 @@ This project entirely or partially for free and even commercially. However, plea
 
 Do the above and share your source code with everyone; just like we do!
 
-## Setting up a Workspace
-Click [here](docs/WORKSPACE.md) for instructions to setup a workspace for FDPNext.
-
-## Contributing
-Click [here](docs/NOTECONTRIBUTIONS.md) for information about contributing to FDPNext.

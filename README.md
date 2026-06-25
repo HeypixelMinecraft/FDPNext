@@ -26,8 +26,3 @@
 
 请遵守以上要求，并像我们一样与所有人分享你的源代码！
 
-## 搭建开发环境
-点击 [这里](docs/WORKSPACE.md) 查看 FDPNext 开发环境搭建说明。
-
-## 参与贡献
-点击 [这里](docs/NOTECONTRIBUTIONS.md) 了解如何为 FDPNext 贡献代码。
