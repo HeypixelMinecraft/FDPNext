@@ -44,8 +44,8 @@ class DamageParticle : Module(name = "DamageParticle", category = ModuleCategory
                     val lastHealth = healthData.getOrDefault(entity.entityId,entity.maxHealth)
                     healthData[entity.entityId] = entity.health
                     if(lastHealth == entity.health) continue
-                    val colourPrefix = if (colourValue.get().equals("Damage")) (if(lastHealth>entity.health){"§c"}else{"§a"}) else ""
-                    val prefix = if (!colourValue.get().equals("Rainbow")) (if(lastHealth>entity.health){"�?}else{"�?}) else (if(lastHealth>entity.health){"-"}else{"+"})
+                    val colourPrefix = if (colourValue.get().equals("Damage")) (if(lastHealth>entity.health){"搂c"}else{"搂a"}) else ""
+                    val prefix = if (!colourValue.get().equals("Rainbow")) "HP" else (if(lastHealth>entity.health){"-"}else{"+"})
                     particles.add(SingleParticle(colourPrefix + prefix + BigDecimal(abs(lastHealth - entity.health).toDouble()).setScale(1, BigDecimal.ROUND_HALF_UP).toDouble()
                         ,entity.posX - 0.5 + Random(System.currentTimeMillis()).nextInt(5).toDouble() * 0.1
                         ,entity.entityBoundingBox.minY + (entity.entityBoundingBox.maxY - entity.entityBoundingBox.minY) / 2.0

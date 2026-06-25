@@ -177,7 +177,8 @@ public class Window {
             y = mouseY - dragY;
             buttons.get(0).y = y + 22 - scroll;
             for (Button b4 : buttons) {
-                b4.x = x + 5;//Button Xï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿?            }
+                b4.x = x + 5;
+            }
         }
 
     }

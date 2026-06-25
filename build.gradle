@@ -16,7 +16,7 @@ repositories {
 }
 
 version = "0.1.0-beta"
-group = "org.unlegitmc.fdp"
+group = "org.91team.fdp"
 archivesBaseName = "FDPNext"
 
 sourceCompatibility = targetCompatibility = 1.8
@@ -39,6 +39,7 @@ minecraft {
 configurations {
     include
     implementation.extendsFrom(include)
+    runtimeOnly.canBeResolved = true
 }
 
 dependencies {

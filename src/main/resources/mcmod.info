@@ -2,7 +2,7 @@
   {
     "modid": "fdpclient",
     "name": "FDPNext",
-    "description": "Minecraft 1.8 Utility mod",
+    "description": "A super-skid Minecraft client based on FDP v5.3.5, using Minecraft Forge 1.8.9 and mixin injection.",
     "version": "${version}",
     "mcversion": "${mcversion}",
     "url": "https://fdpinfo.github.io",

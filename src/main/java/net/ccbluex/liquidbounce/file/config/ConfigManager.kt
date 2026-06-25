@@ -39,7 +39,8 @@ class ConfigManager {
     fun load(name: String, save: Boolean = true) {
         FDPNext.isLoadingConfig = true
         if (save && nowConfig != name) {
-            save(true, true) // 保存老配�?        }
+            save(true, true)
+        }
 
         nowConfig = name
         configFile = File(FDPNext.fileManager.configsDir, "$nowConfig.json")
@@ -47,7 +48,7 @@ class ConfigManager {
         val json = if (configFile.exists()) {
             JsonParser().parse(configFile.reader(Charsets.UTF_8)).asJsonObject
         } else {
-            JsonObject() // 这样方便一�?虽然效率会低
+            JsonObject()
         }
 
         for (section in sections) {

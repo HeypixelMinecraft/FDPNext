@@ -1,6 +1,6 @@
 /*
  * FDPNext Hacked Client
- * A free open source mixin-based injection hacked client for Minecraft using Minecraft Forge by LiquidBounce.
+ * A Super Skid Minecraft Client based on FDP v5.3.5.
  * https://github.com/SkidderMC/FDPNext/
  * This file is a skid of https://github.com/WYSI-Foundation/LiquidBouncePlus/
  */

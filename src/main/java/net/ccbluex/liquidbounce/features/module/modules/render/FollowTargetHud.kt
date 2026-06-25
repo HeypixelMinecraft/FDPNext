@@ -76,20 +76,13 @@ class FollowTargetHud : Module(name = "FollowTargetHud", category = ModuleCatego
         var pre = ""
         val teams = FDPNext.moduleManager[Teams::class.java]!!
         if (FDPNext.fileManager.friendsConfig.isFriend(entity.name)) {
-            pre = "$pre§b[Friend] "
+            pre += "[Friend] "
         }
         if (teams.isInYourTeam(entity)) {
-            pre = "$pre§a[TEAM] "
+            pre += "[TEAM] "
         }
         if (AntiBot.isBot(entity)) {
-            pre = "$pre§e[BOT] "
-        }
-        if (!AntiBot.isBot(entity) && !teams.isInYourTeam(entity)) {
-            pre = if (FDPNext.fileManager.friendsConfig.isFriend(entity.name)) {
-                "§b[Friend] §c"
-            } else {
-                "§c"
-            }
+            pre += "[BOT] "
         }
         return name + pre
     }
@@ -198,7 +191,7 @@ class FollowTargetHud : Module(name = "FollowTargetHud", category = ModuleCatego
                 fontRenderer.drawString(tag, -106 + xChange.toInt() , 10, Color.WHITE.rgb)
                
                 
-                val distanceString = "�? + ( ( ( mc.thePlayer.getDistanceToEntity(entity) * 10f ).toInt() ).toFloat() * 0.1f ).toString() 
+                val distanceString = "Distance: " + (((mc.thePlayer.getDistanceToEntity(entity) * 10f).toInt()).toFloat() * 0.1f).toString()
                 fontRenderer.drawString(distanceString, -25 - fontRenderer.getStringWidth(distanceString).toInt() + xChange.toInt(), 10, Color.WHITE.rgb)
                 
                 // draw health bars
@@ -304,7 +297,7 @@ class FollowTargetHud : Module(name = "FollowTargetHud", category = ModuleCatego
                 // colors
                 var hpBarColor = Color(255, 255, 255, jelloAlphaValue.get())
                 val name = entity.displayName.unformattedText
-                if (jelloColorValue.get() && name.startsWith("§")) {
+                if (jelloColorValue.get() && (name.startsWith("§") || name.startsWith("搂"))) {
                     hpBarColor = ColorUtils.colorCode(name.substring(1, 2), jelloAlphaValue.get())
                 }
                 val bgColor = Color(50, 50, 50, jelloAlphaValue.get())
