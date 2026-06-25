@@ -1,19 +1,19 @@
 <div align="center">
-<h1>FDPClient</h1>
+<h1>FDPNext</h1>
 <h3>A free mixin-based injection hacked-client for Minecraft using Minecraft Forge based on LiquidBounce.</h3>
 Website: <a href="https://fdpinfo.github.io">fdpinfo.github.io</a><br>
-Latest build: <a href="https://github.com/SkidderMC/FDPClient/actions/workflows/build.yml?query=event%3Apush">beta-version</a><br>
+Latest build: <a href="https://github.com/HeypixelMinecraft/FDPNext/actions/workflows/build.yml?query=event%3Apush">beta-version</a><br>
 Discord: <a href="https://dsc.gg/fdpdiscord">dsc.gg/fdpdiscord</a><br>
 </div>
 
-## Installing FDPClient
-Click [here](docs/INSTALLING.md) for instructions on how to install FDPClient
+## Installing FDPNext
+Click [here](docs/INSTALLING.md) for instructions on how to install FDPNext
 
 ## The staff team
-Click [here](docs/TEAM.md) to find learn about FDPClient's team
+Click [here](docs/TEAM.md) to find learn about FDPNext's team
 
 ## Issues
-Found a bug or have an idea for a new feature? You can let us know by clicking [here](https://github.com/SkidderMC/FDPClient/issues) to open an issue.
+Found a bug or have an idea for a new feature? You can let us know by clicking [here](https://github.com/HeypixelMinecraft/FDPNext/issues) to open an issue.
 
 ## Facts
 [Fun Facts](docs/MinecraftAnticheatBeLike.md)
@@ -36,7 +36,7 @@ This project entirely or partially for free and even commercially. However, plea
 Do the above and share your source code with everyone; just like we do!
 
 ## Setting up a Workspace
-Click [here](docs/WORKSPACE.md) for instructions to setup a workspace for FDPClient.
+Click [here](docs/WORKSPACE.md) for instructions to setup a workspace for FDPNext.
 
 ## Contributing
-Click [here](docs/NOTECONTRIBUTIONS.md) for information about contributing to FDPClient.
+Click [here](docs/NOTECONTRIBUTIONS.md) for information about contributing to FDPNext.
