@@ -6,13 +6,13 @@
 package net.ccbluex.liquidbounce.ui.font
 
 import net.ccbluex.liquidbounce.utils.render.ColorUtils
-import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.FontRenderer
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.texture.TextureUtil
 import org.lwjgl.opengl.GL11
 import java.awt.Color
 import java.awt.Font
+import java.awt.GraphicsEnvironment
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
@@ -55,10 +55,12 @@ class AWTFontRenderer(val font: Font, startChar: Int = 0, stopChar: Int = 255) {
     private val charLocations = arrayOfNulls<CharLocation>(stopChar)
 
     private val cachedStrings: HashMap<String, CachedFont> = HashMap()
+    private val dynamicCharLocations: HashMap<Char, DynamicCharLocation> = HashMap()
 
     private var textureID = 0
     private var textureWidth = 0
     private var textureHeight = 0
+    private val fallbackFonts by lazy { loadFallbackFonts() }
 
     val height: Int
         get() = (fontHeight - 8) / 2
@@ -79,7 +81,6 @@ class AWTFontRenderer(val font: Font, startChar: Int = 0, stopChar: Int = 255) {
      */
     fun drawString(text: String, x: Double, y: Double, color: Int) {
         val scale = 0.25
-        val reverse = 1 / scale
 
         GlStateManager.pushMatrix()
         GlStateManager.scale(scale, scale, scale)
@@ -118,15 +119,14 @@ class AWTFontRenderer(val font: Font, startChar: Int = 0, stopChar: Int = 255) {
         GL11.glBegin(GL11.GL_QUADS)
 
         for (char in text.toCharArray()) {
-            if (char.toInt() >= charLocations.size) {
+            if (char.code >= charLocations.size) {
                 GL11.glEnd()
 
-                // Ugly solution, because floating point numbers, but I think that shouldn't be that much of a problem
-                GlStateManager.scale(reverse, reverse, reverse)
-                Minecraft.getMinecraft().fontRendererObj.drawString("$char", currX.toFloat() * scale.toFloat() + 1, 2f, color, false)
-                currX += Minecraft.getMinecraft().fontRendererObj.getStringWidth("$char") * reverse
+                val fontChar = getDynamicCharLocation(char)
+                GlStateManager.bindTexture(fontChar.textureID)
+                drawDynamicChar(fontChar, currX.toFloat(), 0f)
+                currX += fontChar.width - 8.0
 
-                GlStateManager.scale(scale, scale, scale)
                 GlStateManager.bindTexture(textureID)
                 GlStateManager.color(red, green, blue, alpha)
 
@@ -174,6 +174,22 @@ class AWTFontRenderer(val font: Font, startChar: Int = 0, stopChar: Int = 255) {
         GL11.glVertex2f(x + width, y + height)
         GL11.glTexCoord2f(renderX + renderWidth, renderY)
         GL11.glVertex2f(x + width, y)
+    }
+
+    private fun drawDynamicChar(char: DynamicCharLocation, x: Float, y: Float) {
+        val width = char.width.toFloat()
+        val height = char.height.toFloat()
+
+        GL11.glBegin(GL11.GL_QUADS)
+        GL11.glTexCoord2f(0f, 0f)
+        GL11.glVertex2f(x, y)
+        GL11.glTexCoord2f(0f, 1f)
+        GL11.glVertex2f(x, y + height)
+        GL11.glTexCoord2f(1f, 1f)
+        GL11.glVertex2f(x + width, y + height)
+        GL11.glTexCoord2f(1f, 0f)
+        GL11.glVertex2f(x + width, y)
+        GL11.glEnd()
     }
 
     /**
@@ -236,7 +252,7 @@ class AWTFontRenderer(val font: Font, startChar: Int = 0, stopChar: Int = 255) {
         val graphics2D = BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).graphics as Graphics2D
 
         graphics2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
-        graphics2D.font = font
+        graphics2D.font = getFontForChar(ch)
 
         val fontMetrics = graphics2D.fontMetrics
 
@@ -251,11 +267,47 @@ class AWTFontRenderer(val font: Font, startChar: Int = 0, stopChar: Int = 255) {
         val fontImage = BufferedImage(charWidth, charHeight, BufferedImage.TYPE_INT_ARGB)
         val graphics = fontImage.graphics as Graphics2D
         graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
-        graphics.font = font
+        graphics.font = graphics2D.font
         graphics.color = Color.WHITE
         graphics.drawString(ch.toString(), 3, 1 + fontMetrics.ascent)
 
         return fontImage
+    }
+
+    private fun getDynamicCharLocation(ch: Char): DynamicCharLocation {
+        return dynamicCharLocations.getOrPut(ch) {
+            val fontImage = drawCharToImage(ch)
+            DynamicCharLocation(
+                TextureUtil.uploadTextureImageAllocate(TextureUtil.glGenTextures(), fontImage, true, true),
+                fontImage.width,
+                fontImage.height
+            )
+        }
+    }
+
+    private fun getFontForChar(ch: Char): Font {
+        if (font.canDisplay(ch)) {
+            return font
+        }
+
+        return fallbackFonts.firstOrNull { it.canDisplay(ch) } ?: font
+    }
+
+    private fun loadFallbackFonts(): List<Font> {
+        val preferredFonts = setOf(
+            "Microsoft YaHei UI",
+            "Microsoft YaHei",
+            "SimSun",
+            "NSimSun",
+            "Dialog",
+            "SansSerif"
+        )
+
+        val availableFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().allFonts
+        return availableFonts
+            .filter { it.fontName in preferredFonts || it.family in preferredFonts }
+            .map { it.deriveFont(font.style, font.size.toFloat()) }
+            .ifEmpty { listOf(Font("Dialog", font.style, font.size)) }
     }
 
     /**
@@ -268,12 +320,11 @@ class AWTFontRenderer(val font: Font, startChar: Int = 0, stopChar: Int = 255) {
         var width = 0
 
         for (c in text.toCharArray()) {
-            val fontChar = charLocations[
-                    if (c.toInt() < charLocations.size)
-                        c.toInt()
-                    else
-                        '\u0003'.toInt()
-            ] ?: continue
+            val fontChar = if (c.code < charLocations.size) {
+                charLocations[c.code]
+            } else {
+                getDynamicCharLocation(c)
+            } ?: continue
 
             width += fontChar.width - 8
         }
@@ -293,5 +344,10 @@ class AWTFontRenderer(val font: Font, startChar: Int = 0, stopChar: Int = 255) {
     /**
      * Data class for saving char location of the font image
      */
-    private data class CharLocation(var x: Int, var y: Int, var width: Int, var height: Int)
+    private data class CharLocation(var x: Int, var y: Int, override var width: Int, override var height: Int) : FontCharLocation
+    private data class DynamicCharLocation(var textureID: Int, override var width: Int, override var height: Int) : FontCharLocation
+    private interface FontCharLocation {
+        val width: Int
+        val height: Int
+    }
 }

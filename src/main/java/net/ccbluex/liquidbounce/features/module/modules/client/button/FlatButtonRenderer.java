@@ -140,10 +140,29 @@ public class FlatButtonRenderer extends GuiButton {
             GL11.glScaled(1.0, 1.0, 1.0);
             final boolean var6 = true;
             final float var7 = (float)this.font.getHeight();
-            font.drawCenteredString(this.displayString, (float)(this.xPosition + this.width / 2)+2, this.yPosition + (this.height - this.font.getHeight()) / 2.0f + 6f,new Color(255,255,255).getRGB());
+            if (hasDynamicChars(this.displayString)) {
+                this.font.DisplayFonts(
+                        this.displayString,
+                        (float) (this.xPosition + this.width / 2) - this.font.DisplayFontWidths(this.font, this.displayString) / 2.0f,
+                        this.yPosition + (this.height - this.font.getHeight()) / 2.0f + 6f,
+                        new Color(255,255,255).getRGB(),
+                        this.font
+                );
+            } else {
+                font.drawCenteredString(this.displayString, (float)(this.xPosition + this.width / 2)+2, this.yPosition + (this.height - this.font.getHeight()) / 2.0f + 6f,new Color(255,255,255).getRGB());
+            }
             GL11.glPopAttrib();
             GL11.glPopMatrix();
         }
+    }
+
+    private boolean hasDynamicChars(final String text) {
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) >= 256) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Color darkerColor(final Color c, final int step) {
