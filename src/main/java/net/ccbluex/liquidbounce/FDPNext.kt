@@ -37,7 +37,7 @@ object FDPNext {
     // Client information
     const val CLIENT_NAME = "FDPNext"
     const val COLORED_NAME = "§7[§b§lFDPNext§7] "
-    const val CLIENT_CREATOR = "CCBlueX, Zywl & SkidderMC TEAM"
+    const val CLIENT_CREATOR = "Skidder"
     const val CLIENT_WEBSITE = "fdpinfo.github.io"
     const val CLIENT_VERSION = "v0.1.0-beta"
 
