@@ -1,33 +1,33 @@
 <div align="center">
 <h1>FDPNext</h1>
-<h3>A super-skid Minecraft client based on FDP v5.3.5, using Minecraft Forge 1.8.9 and mixin injection.</h3>
-Latest build: <a href="https://github.com/HeypixelMinecraft/FDPNext/actions/workflows/build.yml?query=event%3Apush">beta-version</a><br>
+<h3>一个基于 FDP v5.3.5 的超级缝合 Minecraft 客户端，使用 Minecraft Forge 1.8.9 与 Mixin 注入。</h3>
+最新构建：<a href="https://github.com/HeypixelMinecraft/FDPNext/actions/workflows/build.yml?query=event%3Apush">beta-version</a><br>
 </div>
 
 
-## Issues
-Found a bug or have an idea for a new feature? You can let us know by clicking [here](https://github.com/HeypixelMinecraft/FDPNext/issues) to open an issue.
+## 问题反馈
+发现 Bug 或有新功能想法？点击 [这里](https://github.com/HeypixelMinecraft/FDPNext/issues) 提交 issue 告诉我们。
 
 
-## License
-This project is subject to the [GNU General Public License v3.0](LICENSE). This does only apply for source code located directly in this clean repository. During the development and compilation process, additional source code may be used to which we have obtained no rights. Such code is not covered by the GPL license.
+## 许可证
+本项目基于 [GNU General Public License v3.0](LICENSE) 协议。该协议仅适用于本仓库中直接包含的源代码。在开发与编译过程中，可能使用到我们未取得权利的额外源代码，此类代码不受 GPL 协议覆盖。
 
-For those who are unfamiliar with the license, here is a summary of its main points. This is by no means legal advise nor legally binding.
+对于不熟悉该协议的用户，以下是主要条款的简要说明。此说明并非法律建议，也不具备法律约束力。
 
-You are allowed to:
-- use
-- share
-- modify
+你可以：
+- 使用
+- 分享
+- 修改
 
-This project entirely or partially for free and even commercially. However, please consider the following:
+本项目整体或部分，无论是免费还是商业用途。但请注意以下几点：
 
-- **You must disclose the source code of your modified work and the source code you took from this project. This means you are not allowed to use code from this project (even partially) in a closed-source (or even obfuscated) application.**
-- **Your modified application must also be licensed under the GPL.**
+- **你必须公开你修改作品的源代码，以及你从本项目中获取的源代码。这意味着你不得将本项目的代码（即使是部分）用于闭源（或混淆）的应用程序中。**
+- **你修改后的应用程序也必须以 GPL 协议开源。**
 
-Do the above and share your source code with everyone; just like we do!
+请遵守以上要求，并像我们一样与所有人分享你的源代码！
 
-## Setting up a Workspace
-Click [here](docs/WORKSPACE.md) for instructions to setup a workspace for FDPNext.
+## 搭建开发环境
+点击 [这里](docs/WORKSPACE.md) 查看 FDPNext 开发环境搭建说明。
 
-## Contributing
-Click [here](docs/NOTECONTRIBUTIONS.md) for information about contributing to FDPNext.
+## 参与贡献
+点击 [这里](docs/NOTECONTRIBUTIONS.md) 了解如何为 FDPNext 贡献代码。
