@@ -26,9 +26,15 @@ object FileUtils {
     }
 
     fun unpackFile(file: File, name: String) {
-        val fos = FileOutputStream(file)
-        IOUtils.copy(FileUtils::class.java.classLoader.getResourceAsStream(name), fos)
-        fos.close()
+        val inputStream = FileUtils::class.java.classLoader.getResourceAsStream(name)
+            ?: throw FileNotFoundException("Bundled resource not found: $name")
+
+        file.parentFile?.mkdirs()
+        FileOutputStream(file).use { fos ->
+            inputStream.use {
+                IOUtils.copy(it, fos)
+            }
+        }
     }
     fun writeFile(str:String,path: String){
         val file=File(path)
