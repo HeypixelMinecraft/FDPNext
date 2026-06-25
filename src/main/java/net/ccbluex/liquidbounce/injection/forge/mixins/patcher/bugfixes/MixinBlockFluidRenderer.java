@@ -1,0 +1,19 @@
+/*
+ * FDPNext Hacked Client
+ * A Super Skid Hacked Client by FDP 5.3.5.
+ * https://github.com/HeypixelMinecraft/FDPNext
+ */
+package net.ccbluex.liquidbounce.injection.forge.mixins.patcher.bugfixes;
+
+import net.minecraft.client.renderer.BlockFluidRenderer;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.Constant;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
+
+@Mixin(BlockFluidRenderer.class)
+public class MixinBlockFluidRenderer {
+    @ModifyConstant(method = "renderFluid", constant = @Constant(floatValue = 0.001F))
+    private float fixFluidStitching(float original) {
+        return 0.0F;
+    }
+}
