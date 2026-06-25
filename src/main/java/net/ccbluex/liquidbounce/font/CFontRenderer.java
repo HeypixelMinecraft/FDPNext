@@ -6,7 +6,6 @@
 
 package net.ccbluex.liquidbounce.font;
 
-import net.ccbluex.liquidbounce.ui.font.Fonts;
 import net.ccbluex.liquidbounce.ui.i18n.LanguageManager;
 import net.ccbluex.liquidbounce.utils.render.RenderUtils;
 import net.minecraft.client.renderer.GlStateManager;
@@ -91,10 +90,8 @@ public class CFontRenderer extends CFont {
             String s = String.valueOf(str.toCharArray()[iF]);
             if (s.contains("§") && iF + 1 <= str.length()) {
                 iF++;
-            } else if (isChinese(s.charAt(0))) {
-                x += (float)font.getStringWidth(s);
             } else {
-                x += (float)Fonts.font35.getStringWidth(s);
+                x += (float)font.getStringWidth(s);
             }
         }
         return x+5;
@@ -110,10 +107,8 @@ public class CFontRenderer extends CFont {
             String s = String.valueOf(str.toCharArray()[iF]);
             if (s.contains("§") && iF + 1 <= str.length()) {
                 iF++;
-            } else if (isChinese(s.charAt(0))) {
-                x += (float)font.getStringWidth(s);
             } else {
-                x += (float)Fonts.font35.getStringWidth(s);
+                x += (float)font.getStringWidth(s);
             }
         }
         return x+5;
@@ -143,14 +138,10 @@ public class CFontRenderer extends CFont {
             if (s.contains("§") && iF + 1 <= str.length()) {
                 color = getColor(String.valueOf(str.toCharArray()[iF + 1]));
                 iF++;
-            } else if (isChinese(s.charAt(0))) {
+            } else {
                 font.drawString(s, x+0.5f, y+1.5f, new Color(0,0,0,100).getRGB());
                 font.drawString(s, x-0.5f, y+0.5f, color);
                 x += (float)font.getStringWidth(s);
-            } else {
-                Fonts.font35.drawString(s, x+1.5f, y+2, new Color(0,0,0,50).getRGB());
-                Fonts.font35.drawString(s, x+0.5f, y+1, color);
-                x += (float)Fonts.font35.getStringWidth(s);
             }
         }
         return x;
@@ -165,12 +156,9 @@ public class CFontRenderer extends CFont {
             if (s.contains("§") && iF + 1 <= str.length()) {
                 color = getColor(String.valueOf(str.toCharArray()[iF + 1]));
                 iF++;
-            } else if (isChinese(s.charAt(0))) {
+            } else {
                 font.drawString(s, x-0.5f, y+1, color);
                 x += (float)font.getStringWidth(s);
-            } else{
-                Fonts.font35.drawString(s, x+0.5f, y+1, color);
-                x += (float)Fonts.font35.getStringWidth(s);
             }
         }
         return x;
@@ -184,12 +172,9 @@ public class CFontRenderer extends CFont {
             if (s.contains("§") && iF + 1 <= str.length()) {
                 color = getColor(String.valueOf(str.toCharArray()[iF + 1]));
                 iF++;
-            } else if (isChinese(s.charAt(0))) {
+            } else {
                 font.drawString(s, x-0.5f, y+1, color);
                 x += (float)font.getStringWidth(s);
-            } else{
-                Fonts.font35.drawString(s, x+0.5f, y+1, color);
-                x += (float)Fonts.font35.getStringWidth(s);
             }
         }
         return x;
@@ -389,6 +374,14 @@ public class CFontRenderer extends CFont {
                     drawLine(c, (y2 + ((double) currentData[character].height)) - 2.0d, (c + ((double) currentData[character].width)) - 8.0d, (y2 + ((double) currentData[character].height)) - 2.0d);
                 }
                 c += (double) ((currentData[character].width - 8) + this.charOffset);
+            } else {
+                DynamicCharData dynamicData = getDynamicCharData(character);
+                GL11.glBindTexture(3553, dynamicData.texture.getGlTextureId());
+                GL11.glBegin(4);
+                drawDynamicQuad((float) c, (float) y2, dynamicData.width, dynamicData.height);
+                GL11.glEnd();
+                bindTextureForData(currentData);
+                c += (double) ((dynamicData.width - 8) + this.charOffset);
             }
             i++;
         }
@@ -499,6 +492,14 @@ public class CFontRenderer extends CFont {
                     drawLine(c, (y2 + ((double) currentData[character].height)) - 2.0d, (c + ((double) currentData[character].width)) - 8.0d, (y2 + ((double) currentData[character].height)) - 2.0d);
                 }
                 c += (double) ((currentData[character].width - 8) + this.charOffset);
+            } else {
+                DynamicCharData dynamicData = getDynamicCharData(character);
+                GL11.glBindTexture(3553, dynamicData.texture.getGlTextureId());
+                GL11.glBegin(4);
+                drawDynamicQuad((float) c, (float) y2, dynamicData.width, dynamicData.height);
+                GL11.glEnd();
+                bindTextureForData(currentData);
+                c += (double) ((dynamicData.width - 8) + this.charOffset);
             }
             i++;
         }
@@ -527,6 +528,8 @@ public class CFontRenderer extends CFont {
                 i++;
             } else if (character < currentData.length) {
                 width += (currentData[character].width - 8) + this.charOffset;
+            } else {
+                width += (getDynamicCharData(character).width - 8) + this.charOffset;
             }
             i++;
         }
@@ -564,6 +567,18 @@ public class CFontRenderer extends CFont {
         GL11.glVertex2d(x1, y1);
         GL11.glEnd();
         GL11.glEnable(3553);
+    }
+
+    private void bindTextureForData(CFont.CharData[] data) {
+        if (data == this.boldChars) {
+            GlStateManager.bindTexture(this.texBold.getGlTextureId());
+        } else if (data == this.italicChars) {
+            GlStateManager.bindTexture(this.texItalic.getGlTextureId());
+        } else if (data == this.boldItalicChars) {
+            GlStateManager.bindTexture(this.texItalicBold.getGlTextureId());
+        } else {
+            GlStateManager.bindTexture(this.tex.getGlTextureId());
+        }
     }
 
     public List<String> wrapWords(String text, double width) {
