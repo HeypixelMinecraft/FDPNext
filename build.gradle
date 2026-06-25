@@ -132,6 +132,42 @@ jar {
     enabled = false
 }
 
+task runClientDevJar(type: Jar) {
+    dependsOn classes
+
+    archiveBaseName.set(project.archivesBaseName)
+    archiveClassifier.set("dev")
+
+    from sourceSets.main.output
+
+    manifest.attributes(
+            "FMLCorePlugin": "net.ccbluex.liquidbounce.injection.forge.TransformerLoader",
+            "FMLCorePluginContainsFMLMod": true,
+            "ForceLoadAsMod": true,
+            "MixinConfigs": "mixins.fdpclient.json",
+            "ModSide": "CLIENT",
+            "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
+            "TweakOrder": "0",
+            "FMLAT": "fdpclient_at.cfg",
+    )
+}
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaExec).matching { it.name == "runClient" }.all {
+        dependsOn runClientDevJar
+
+        doFirst {
+            def packagedJarDir = file("${buildDir}/libs").canonicalFile
+            def devJar = runClientDevJar.archiveFile.get().asFile.canonicalFile
+
+            classpath = files(devJar) + sourceSets.main.runtimeClasspath + files(classpath.files.findAll { candidate ->
+                def canonicalCandidate = candidate.canonicalFile
+                canonicalCandidate != devJar && !canonicalCandidate.path.startsWith(packagedJarDir.path)
+            })
+        }
+    }
+}
+
 mixin {
     disableRefMapWarning = true
     defaultObfuscationEnv searge
