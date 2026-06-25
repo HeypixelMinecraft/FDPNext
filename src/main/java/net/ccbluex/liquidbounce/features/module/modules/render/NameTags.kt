@@ -66,9 +66,7 @@ class NameTags : Module(name = "NameTags", category = ModuleCategory.RENDER) {
     fun onRender3D(event: Render3DEvent) {
         for (entity in mc.theWorld.loadedEntityList) {
             if (EntityUtils.isSelected(entity, false)) {
-                renderNameTag(entity as EntityLivingBase,
-                    if (hackerValue.get() && FDPNext.moduleManager[HackerDetector::class.java]!!.isHacker(entity)) { "§c" } else { "" } + if (!modeValue.equals("Liquid") && AntiBot.isBot(entity)) { "§e" } else { "" } +
-                            if (clearNamesValue.get()) { entity.name } else { entity.getDisplayName().unformattedText })
+                renderNameTag(entity as EntityLivingBase, (if (hackerValue.get() && FDPNext.moduleManager[HackerDetector::class.java]!!.isHacker(entity)) "[Hacker] " else "") + (if (!modeValue.equals("Liquid") && AntiBot.isBot(entity)) "[Bot] " else "") + if (clearNamesValue.get()) { entity.name } else { entity.getDisplayName().unformattedText })
             }
         }
     }
@@ -78,20 +76,13 @@ class NameTags : Module(name = "NameTags", category = ModuleCategory.RENDER) {
         var pre = ""
         val teams = FDPNext.moduleManager[Teams::class.java]!!
         if (FDPNext.fileManager.friendsConfig.isFriend(entity.name)) {
-            pre = "$pre§b[Friend] "
+            pre += "[Friend] "
         }
         if (teams.isInYourTeam(entity)) {
-            pre = "$pre§a[TEAM] "
+            pre += "[TEAM] "
         }
         if (AntiBot.isBot(entity)) {
-            pre = "$pre§e[BOT] "
-        }
-        if (!AntiBot.isBot(entity) && !teams.isInYourTeam(entity)) {
-            pre = if (FDPNext.fileManager.friendsConfig.isFriend(entity.name)) {
-                "§b[Friend] §c"
-            } else {
-                "§c"
-            }
+            pre += "[BOT] "
         }
         return name + pre
     }
@@ -170,13 +161,13 @@ class NameTags : Module(name = "NameTags", category = ModuleCategory.RENDER) {
             "liquid" -> {
                 // Modify tag
                 val bot = AntiBot.isBot(entity)
-                val nameColor = if (bot) "§3" else if (entity.isInvisible) "§6" else if (entity.isSneaking) "§4" else "§7"
+                val nameColor = ""
                 val ping = entity.ping
 
-                val distanceText = if (distanceValue.get()) "§7 [§a${mc.thePlayer.getDistanceToEntity(entity).roundToInt()}§7]" else ""
-                val pingText = if (pingValue.get() && entity is EntityPlayer) " §7[" + (if (ping > 200) "§c" else if (ping > 100) "§e" else "§a") + ping + "ms§7]" else ""
-                val healthText = if (healthValue.get()) "§7 [§f" + entity.health.toInt() + "§c❤�?]" else ""
-                val botText = if (bot) " §7[§6§lBot§7]" else ""
+                val distanceText = if (distanceValue.get()) " [${mc.thePlayer.getDistanceToEntity(entity).roundToInt()}m]" else ""
+                val pingText = if (pingValue.get() && entity is EntityPlayer) " [${ping}ms]" else ""
+                val healthText = if (healthValue.get()) " [${entity.health.toInt()} HP]" else ""
+                val botText = if (bot) " [Bot]" else ""
 
                 val text = "$distanceText$pingText$nameColor$tag$healthText$botText"
 
@@ -285,7 +276,7 @@ class NameTags : Module(name = "NameTags", category = ModuleCategory.RENDER) {
                 // colors
                 var hpBarColor = Color(255, 255, 255, jelloAlphaValue.get())
                 val name = entity.displayName.unformattedText
-                if (jelloColorValue.get() && name.startsWith("§")) {
+                if (jelloColorValue.get() && (name.startsWith("§") || name.startsWith("搂"))) {
                     hpBarColor = ColorUtils.colorCode(name.substring(1, 2), jelloAlphaValue.get())
                 }
                 val bgColor = Color(20, 20, 20, jelloAlphaValue.get())

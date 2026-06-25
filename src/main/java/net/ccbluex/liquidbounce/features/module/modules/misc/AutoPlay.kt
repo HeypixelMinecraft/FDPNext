@@ -138,7 +138,7 @@ class AutoPlay : Module(name = "AutoPlay", category = ModuleCategory.MISC) {
                     }
                 }
                 "hydracraft" -> {
-                    if (text.contains("Has ganado ¿Qué quieres hacer?", true)) {
+                    if (text.contains("Has ganado 驴Qu茅 quieres hacer?", true)) {
                         queueAutoPlay {
                             mc.thePlayer.sendChatMessage("/playagain")
                         }
@@ -211,13 +211,13 @@ class AutoPlay : Module(name = "AutoPlay", category = ModuleCategory.MISC) {
                 }
 
                 "minefc/heromc_bedwars" -> {
-                    if (text.contains("Bạn đã b�?loại!", false) || text.contains("đã thắng trò chơi", false)) {
+                    if (text.contains("B岷 膽茫 b峄?lo岷!", false) || text.contains("膽茫 th岷痭g tr貌 ch啤i", false)) {
                         mc.thePlayer.sendChatMessage("/bw leave")
                         waitForLobby = true
                     }
                     
                     if (
-                            ( (    waitForLobby || autoStartValue.get()) && text.contains("¡Hiển th�?, false) ) || 
+                            ( (    waitForLobby || autoStartValue.get()) && text.contains("Hi", false) ) || 
                             ( replayWhenKickedValue.get()                && text.contains("[Anticheat] You have been kicked from the server!", false))
                        ) {
                         
@@ -227,7 +227,7 @@ class AutoPlay : Module(name = "AutoPlay", category = ModuleCategory.MISC) {
                         waitForLobby = false
                     }
                     
-                    if (showGuiWhenFailedValue.get() && text.contains("giây", false) && text.contains("thất bại", false)) {
+                    if (showGuiWhenFailedValue.get() && text.contains("gi芒y", false) && text.contains("th岷 b岷", false)) {
                         FDPNext.hud.addNotification(Notification(this.name, "Failed to join, showing GUI...", NotifyType.ERROR, 1000))
                         mc.thePlayer.sendChatMessage("/bw gui ${bwModeValue.get()}")
                     }

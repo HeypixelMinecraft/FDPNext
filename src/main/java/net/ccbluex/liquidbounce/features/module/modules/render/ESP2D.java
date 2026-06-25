@@ -253,7 +253,7 @@ public final class ESP2D extends Module {
 
                             durabilityWidth = armorValue / itemDurability;
                             textWidth = (endPosY - posY) * durabilityWidth;
-                            String healthDisplay = dFormat.format(entityLivingBase.getHealth()) + " ¬ßc‚ù?;
+                            String healthDisplay = dFormat.format(entityLivingBase.getHealth()) + " HP";
                             String healthPercent = ((int) ((entityLivingBase.getHealth() / itemDurability) * 100F)) + "%";
                             if (healthNumber.get() && (!hoverValue.get() || entity == mc.thePlayer || isHovering(posX, endPosX, posY, endPosY, scaledResolution)))
                                 drawScaledString(hpMode.get().equalsIgnoreCase("health") ? healthDisplay : healthPercent, posX - 4.0 - Fonts.minecraftFont.getStringWidth(hpMode.get().equalsIgnoreCase("health") ? healthDisplay : healthPercent) * fontScaleValue.get(), (endPosY - textWidth) - Fonts.minecraftFont.FONT_HEIGHT / 2F * fontScaleValue.get(), fontScaleValue.get(), -1);

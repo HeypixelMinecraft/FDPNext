@@ -785,12 +785,14 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
             return true
         }
 
-        // 视角差异
+        // 閻熸瑥妫滈～妤€顔忛鑲╃＝
         val entityFov = RotationUtils.getRotationDifference(RotationUtils.toRotation(RotationUtils.getCenter(entity.hitBox), true), RotationUtils.serverRotation)
 
-        // 可以被看�?        if (entityFov <= mc.gameSettings.fovSetting) lastCanBeSeen = true
-        else if (lastCanBeSeen) { // 不可以被看见但是上一次tick可以看见
-            rotationTimer.reset() // 重置计时�?            lastCanBeSeen = false
+        if (entityFov <= mc.gameSettings.fovSetting) {
+            lastCanBeSeen = true
+        } else if (lastCanBeSeen) {
+            rotationTimer.reset()
+            lastCanBeSeen = false
         }
 
         if (predictValue.get()) {
@@ -1299,6 +1301,7 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
         get() = when (displayMode.get().lowercase()) {
          "simple" -> targetModeValue.get() + ""
          "lesssimple" -> rangeValue.get().toString() + " " + targetModeValue.get().toString() + " " + autoBlockValue.get().toString()
-          "complicated" -> "M:" + targetModeValue.get() + ", AB:" + autoBlockValue.get() + ", R:" + rangeValue.get() + ", CPS:" + minCpsValue.get() + " - " + maxCpsValue.get()else -> targetModeValue.get() + ""
+          "complicated" -> "M:" + targetModeValue.get() + ", AB:" + autoBlockValue.get() + ", R:" + rangeValue.get() + ", CPS:" + minCpsValue.get() + " - " + maxCpsValue.get()
+          else -> targetModeValue.get() + ""
         }
 }

@@ -192,7 +192,7 @@ class ESP : Module(name = "ESP", category = ModuleCategory.RENDER) {
                                     GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f)
                                     GL11.glEnable(GL11.GL_TEXTURE_2D)
                                     GL11.glEnable(GL11.GL_DEPTH_TEST)
-                                    mc.fontRendererObj.drawString(this.decimalFormat.format(entityLiving.health) + "§c�?, maxX + 4.0f, minY + barHeight, ColorUtils.healthColor(entityLiving.health, entityLiving.maxHealth).rgb, false)
+                                    mc.fontRendererObj.drawString(this.decimalFormat.format(entityLiving.health) + " HP", maxX + 4.0f, minY + barHeight, ColorUtils.healthColor(entityLiving.health, entityLiving.maxHealth).rgb, false)
                                     GL11.glDisable(GL11.GL_TEXTURE_2D)
                                     GL11.glDisable(GL11.GL_DEPTH_TEST)
                                     GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f)
@@ -332,7 +332,7 @@ class ESP : Module(name = "ESP", category = ModuleCategory.RENDER) {
             if (colorModeValue.get() == "Name") {
                 val chars = entity.displayName.formattedText.toCharArray()
                 for (i in chars.indices) {
-                    if (chars[i] != '§' || i + 1 >= chars.size) continue
+                    if (chars[i] != '搂' || i + 1 >= chars.size) continue
                     val index = getColorIndex(chars[i + 1])
                     if (index < 0 || index > 15) continue
                     return Color(ColorUtils.hexColors[index])

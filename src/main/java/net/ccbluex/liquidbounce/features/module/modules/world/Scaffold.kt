@@ -938,7 +938,7 @@ class Scaffold : Module(name = "Scaffold", category = ModuleCategory.WORLD, keyB
                     3f,
                     Color(43, 45, 48).rgb
                 )
-                mc.fontRendererObj.drawCenteredString("â–?,width / 2.0f + 2f, height * 0.8f+8f,Color(43,45,48).rgb)
+                mc.fontRendererObj.drawCenteredString(info, width / 2.0f + 2f, height * 0.8f + 8f, Color(43, 45, 48).rgb)
                 var stack = barrier
                 if (slot != -1) {
                     if (mc.thePlayer.inventory.getCurrentItem() != null) {

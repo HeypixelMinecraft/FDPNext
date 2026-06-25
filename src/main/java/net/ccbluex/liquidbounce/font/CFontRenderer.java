@@ -70,7 +70,7 @@ public class CFontRenderer extends CFont {
     }
 
     public static char validateLegalString(String content) {
-        String illegal = "`~!#%^&*=+\\|{};:'\",<>/?○●★☆☉♀♂※¤╬の�?;
+        String illegal = "~!#%^&*=+\\|{};:'\",<>/?";
         char isLegalChar = 't';
 
         for(int i = 0; i < content.length(); ++i) {

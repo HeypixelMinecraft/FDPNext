@@ -16,7 +16,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * LiquidBounce Hacked Client
+ * FDPNext Minecraft Client
  * A minecraft forge injection client using Mixin
  *
  * @game Minecraft
