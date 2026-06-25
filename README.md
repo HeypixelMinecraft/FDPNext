@@ -1,22 +1,13 @@
 <div align="center">
 <h1>FDPNext</h1>
 <h3>A super-skid Minecraft client based on FDP v5.3.5, using Minecraft Forge 1.8.9 and mixin injection.</h3>
-Website: <a href="https://fdpinfo.github.io">fdpinfo.github.io</a><br>
 Latest build: <a href="https://github.com/HeypixelMinecraft/FDPNext/actions/workflows/build.yml?query=event%3Apush">beta-version</a><br>
-Discord: <a href="https://dsc.gg/fdpdiscord">dsc.gg/fdpdiscord</a><br>
 </div>
 
-## Installing FDPNext
-Click [here](docs/INSTALLING.md) for instructions on how to install FDPNext
-
-## The staff team
-Click [here](docs/TEAM.md) to find learn about FDPNext's team
 
 ## Issues
 Found a bug or have an idea for a new feature? You can let us know by clicking [here](https://github.com/HeypixelMinecraft/FDPNext/issues) to open an issue.
 
-## Facts
-[Fun Facts](docs/MinecraftAnticheatBeLike.md)
 
 ## License
 This project is subject to the [GNU General Public License v3.0](LICENSE). This does only apply for source code located directly in this clean repository. During the development and compilation process, additional source code may be used to which we have obtained no rights. Such code is not covered by the GPL license.
