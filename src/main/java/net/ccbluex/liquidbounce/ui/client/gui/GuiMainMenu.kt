@@ -5,28 +5,14 @@
  */
 package net.ccbluex.liquidbounce.ui.client.gui
 
-import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.*
-import net.minecraft.client.gui.*
-import net.minecraft.client.settings.GameSettings
-import net.minecraft.client.Minecraft;
+import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.ModernGuiMainMenu
+import net.minecraft.client.gui.GuiScreen
+import net.minecraft.client.gui.GuiYesNoCallback
 
 
 class GuiMainMenu : GuiScreen(), GuiYesNoCallback {
     override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
-        fun isFastRenderEnabled(): Boolean {
-            return try {
-                val fastRender = GameSettings::class.java.getDeclaredField("ofFastRender")
-                fastRender.getBoolean(Minecraft.getMinecraft().gameSettings)
-            } catch (var1: Exception) {
-                false
-            }
-        }
-        if (isFastRenderEnabled()){
-            mc.displayGuiScreen(ClassicGuiMainMenu())
-        } else {
-            mc.displayGuiScreen(ModernGuiMainMenu())
-        }
-        drawBackground(1)
+        mc.displayGuiScreen(ModernGuiMainMenu())
     }
 
 }
