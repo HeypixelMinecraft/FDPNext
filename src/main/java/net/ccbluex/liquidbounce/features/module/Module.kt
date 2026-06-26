@@ -89,6 +89,10 @@ open class Module @JvmOverloads constructor(
         } else {
             LanguageManager.getAndFormat("module.$name.name")
         }
+        // Apply defaultOn if no config has been loaded yet
+        if (defaultOn && !state) {
+            state = true
+        }
     }
 
     // Current state of module
