@@ -444,7 +444,7 @@ class MyauScaffold : Module(name = "MyauScaffold", category = ModuleCategory.WOR
     }
 
     private fun isAirAbove(): Boolean {
-        val headPos = BlockPos(MathHelper.floor_double(mc.thePlayer.posX), MathHelper.ceil_double(mc.thePlayer.posY) + 1, MathHelper.floor_double(mc.thePlayer.posZ))
+        val headPos = BlockPos(MathHelper.floor_double(mc.thePlayer.posX), MathHelper.ceiling_double_int(mc.thePlayer.posY) + 1, MathHelper.floor_double(mc.thePlayer.posZ))
         return isReplaceable(headPos)
     }
 
@@ -622,8 +622,7 @@ class MyauScaffold : Module(name = "MyauScaffold", category = ModuleCategory.WOR
                 if (!isForwardPressed()) {
                     mc.thePlayer.motionX = 0.0
                     mc.thePlayer.motionZ = 0.0
-                    event.strafe = 0f
-                    event.forward = 0f
+                    event.cancelEvent()
                 } else {
                     val speed = MovementUtils.getSpeed()
                     val yaw = Math.toRadians(MovementUtils.direction * 180.0 / Math.PI)
