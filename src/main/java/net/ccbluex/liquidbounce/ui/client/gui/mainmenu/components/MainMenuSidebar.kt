@@ -33,7 +33,6 @@ class MainMenuSidebar(
     private val buttonHeight: Int get() = 24
     private val gap: Int get() = 4
     private val hoverSpeed: Float = 0.15f
-
     fun buttonRect(index: Int): Rect {
         val by = y + index * (buttonHeight + gap)
         return Rect(x.toFloat(), by.toFloat(), (x + width).toFloat(), (by + buttonHeight).toFloat())

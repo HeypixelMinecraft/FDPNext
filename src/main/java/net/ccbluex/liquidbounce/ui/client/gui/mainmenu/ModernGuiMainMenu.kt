@@ -11,6 +11,7 @@ import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.components.MainMenuBackgr
 import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.components.MainMenuContentPanel
 import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.components.MainMenuHeader
 import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.components.MainMenuSidebar
+import net.ccbluex.liquidbounce.utils.render.shader.shaders.AuroraShader
 import net.minecraft.client.gui.GuiLanguage
 import net.minecraft.client.gui.GuiMultiplayer
 import net.minecraft.client.gui.GuiOptions
@@ -42,6 +43,7 @@ class ModernGuiMainMenu : GuiScreen(), GuiYesNoCallback {
     private lateinit var sidebar: MainMenuSidebar
 
     override fun initGui() {
+        AuroraShader.resetTime()
         val buttons = listOf(
             MainMenuButton("singleplayer", ">", "ui.mainmenu.singleplayer") {
                 mc.displayGuiScreen(GuiSelectWorld(this))

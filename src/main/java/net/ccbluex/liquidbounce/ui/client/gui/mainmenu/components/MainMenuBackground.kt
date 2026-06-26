@@ -5,21 +5,28 @@
  */
 package net.ccbluex.liquidbounce.ui.client.gui.mainmenu.components
 
+import net.ccbluex.liquidbounce.utils.render.GLUtils
 import net.ccbluex.liquidbounce.utils.render.ParticleUtils
-import net.ccbluex.liquidbounce.utils.render.RenderUtils
-import java.awt.Color
+import net.ccbluex.liquidbounce.utils.render.shader.shaders.AuroraShader
+import org.lwjgl.opengl.GL11.*
 
 /**
- * Animated dark background: vertical gradient + particle field.
- * Colors follow the LiquidBounce.next-ish dark theme.
+ * Aurora / flowing gradient background shader + particle overlay.
  */
 object MainMenuBackground {
 
-    private val TOP = Color(15, 15, 20).rgb
-    private val BOTTOM = Color(26, 26, 36).rgb
-
     fun draw(mouseX: Int, mouseY: Int, width: Int, height: Int) {
-        RenderUtils.drawGradientRect(0, 0, width, height, TOP, BOTTOM)
+        // Draw aurora shader over full screen
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        AuroraShader.startShader()
+        GLUtils.drawQuads(0f, 0f, width.toFloat(), height.toFloat())
+        AuroraShader.stopShader()
+
+        glDisable(GL_BLEND)
+
+        // Particle overlay on top
         ParticleUtils.drawParticles(mouseX, mouseY)
     }
 }
