@@ -135,17 +135,12 @@ public abstract class MixinGuiScreen {
         GlStateManager.disableLighting();
         GlStateManager.disableFog();
         if(GuiBackground.Companion.getEnabled()) {
-            if (FDPNext.INSTANCE.getBackground() == null) {
-                GL11.glEnable(GL11.GL_BLEND);
+            GL11.glEnable(GL11.GL_BLEND);
                 GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
                 AuroraShader.INSTANCE.startShader();
                 GLUtils.drawQuads(0f, 0f, (float) width, (float) height);
                 AuroraShader.INSTANCE.stopShader();
                 GL11.glDisable(GL11.GL_BLEND);
-            }else{
-                mc.getTextureManager().bindTexture(FDPNext.INSTANCE.getBackground());
-                Gui.drawModalRectWithCustomSizedTexture(0, 0, 0f, 0f, width, height, width, height);
-            }
 
 
             GlStateManager.resetColor();
