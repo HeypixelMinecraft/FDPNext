@@ -17,6 +17,4 @@ class ShitCode {
     fun setAttack(b: Boolean) {
         attack = b
     }
-
-    fun getAttack(): Boolean = attack
 }
