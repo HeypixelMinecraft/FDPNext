@@ -9,7 +9,7 @@ import net.ccbluex.liquidbounce.event.PacketEvent
 import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.features.module.modules.combat.velocitys.VelocityMode
 import net.minecraft.network.Packet
-import net.minecraft.network.play.client.C04PacketPlayerPosition
+import net.minecraft.network.play.client.C03PacketPlayer
 import net.minecraft.network.play.server.S12PacketEntityVelocity
 import kotlin.math.abs
 import kotlin.math.sign
@@ -103,7 +103,7 @@ class IntaveVelocity : VelocityMode("Intave") {
         val netHandler = mc.netHandler
 
         repeat(count) {
-            val packet: Packet<*> = C04PacketPlayerPosition(posX, posY, posZ, onGround)
+            val packet: Packet<*> = C03PacketPlayer.C04PacketPlayerPosition(posX, posY, posZ, onGround)
             netHandler.addToSendQueue(packet)
         }
     }

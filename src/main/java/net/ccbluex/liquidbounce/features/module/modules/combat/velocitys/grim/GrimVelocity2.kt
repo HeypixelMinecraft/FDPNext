@@ -7,7 +7,7 @@ package net.ccbluex.liquidbounce.features.module.modules.combat.velocitys.grim
 
 import net.ccbluex.liquidbounce.FDPNext
 import net.ccbluex.liquidbounce.event.PacketEvent
-import net.ccbluex.liquidbounce.event.TickEvent
+import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.features.module.modules.combat.velocitys.VelocityMode
 import net.ccbluex.liquidbounce.features.value.BoolValue
 import net.ccbluex.liquidbounce.features.value.IntegerValue
@@ -45,7 +45,7 @@ class GrimVelocity2 : VelocityMode("GrimC07") {
         if (packet is S08PacketPlayerPosLook) {
             flagTimer.reset()
         }
-        if (!flagTimer.hasTimePassed(flagPauseValue.get())) {
+        if (!flagTimer.hasTimePassed(flagPauseValue.get().toLong())) {
             gotVelo = false
             return
         }
@@ -64,8 +64,8 @@ class GrimVelocity2 : VelocityMode("GrimC07") {
         }
     }
 
-    override fun onTick(event: TickEvent) {
-        if (!flagTimer.hasTimePassed(flagPauseValue.get())) {
+    override fun onUpdate(event: UpdateEvent) {
+        if (!flagTimer.hasTimePassed(flagPauseValue.get().toLong())) {
             gotVelo = false
             return
         }
