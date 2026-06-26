@@ -60,6 +60,11 @@ object FDPNext {
         if (it == "main") "Main" else it
     }
 
+    @JvmField
+    val CLIENT_COMMIT = (gitInfo["git.commit.id.abbrev"] as? String)
+        ?: (gitInfo["git.commit.id"] as? String)?.substring(0, 7)
+        ?: "unknown"
+
     // Managers
     lateinit var moduleManager: ModuleManager
     lateinit var commandManager: CommandManager

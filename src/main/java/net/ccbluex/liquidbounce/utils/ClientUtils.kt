@@ -39,10 +39,10 @@ ClientUtils : MinecraftInstance() {
     }
 
     fun setTitle() {
-        Display.setTitle("${FDPNext.CLIENT_NAME} ${FDPNext.CLIENT_VERSION} (${FDPNext.CLIENT_BRANCH}) | ${FDPNext.CLIENT_WEBSITE}")
+        Display.setTitle("${FDPNext.CLIENT_NAME} ${FDPNext.CLIENT_VERSION} (${FDPNext.CLIENT_BRANCH}@${FDPNext.CLIENT_COMMIT}) | ${FDPNext.CLIENT_WEBSITE}")
     }
     fun setTitle(stats:String) {
-        Display.setTitle("${FDPNext.CLIENT_NAME} ${FDPNext.CLIENT_VERSION} (${FDPNext.CLIENT_BRANCH}) | ${FDPNext.CLIENT_WEBSITE} - " + stats)
+        Display.setTitle("${FDPNext.CLIENT_NAME} ${FDPNext.CLIENT_VERSION} (${FDPNext.CLIENT_BRANCH}@${FDPNext.CLIENT_COMMIT}) | ${FDPNext.CLIENT_WEBSITE} - " + stats)
     }
 
     fun displayAlert(message: String) {
