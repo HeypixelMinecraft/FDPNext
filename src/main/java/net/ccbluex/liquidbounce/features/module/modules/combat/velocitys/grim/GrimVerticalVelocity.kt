@@ -10,7 +10,6 @@ import net.ccbluex.liquidbounce.event.AttackEvent
 import net.ccbluex.liquidbounce.event.PacketEvent
 import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura
-import net.ccbluex.liquidbounce.features.module.modules.combat.Velocity
 import net.ccbluex.liquidbounce.features.module.modules.combat.velocitys.VelocityMode
 import net.ccbluex.liquidbounce.features.value.BoolValue
 import net.ccbluex.liquidbounce.features.value.IntegerValue
@@ -48,7 +47,7 @@ class GrimVerticalVelocity : VelocityMode("GrimVertical") {
         player.motionX *= 0.07776
         player.motionZ *= 0.07776
         attack = false
-        Velocity.velocityInput = false
+        velocity.velocityInput = false
     }
 
     private fun runSwing() {
@@ -75,7 +74,7 @@ class GrimVerticalVelocity : VelocityMode("GrimVertical") {
         if (player.onGround && player.hurtTime > 0) {
             player.jump()
         }
-        Velocity.velocityInput = true
+        velocity.velocityInput = true
 
         val killAura = FDPNext.moduleManager[KillAura::class.java]!!
         if (!killAura.state || killAura.currentTarget == null) return

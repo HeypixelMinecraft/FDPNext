@@ -10,7 +10,6 @@ import net.ccbluex.liquidbounce.event.AttackEvent
 import net.ccbluex.liquidbounce.event.PacketEvent
 import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura
-import net.ccbluex.liquidbounce.features.module.modules.combat.Velocity
 import net.ccbluex.liquidbounce.features.module.modules.combat.velocitys.VelocityMode
 import net.ccbluex.liquidbounce.features.value.BoolValue
 import net.ccbluex.liquidbounce.features.value.IntegerValue
@@ -66,7 +65,7 @@ class GrimVerticalVelocity5 : VelocityMode("GrimVertical5") {
                 player.motionX *= 0.07776
                 player.motionZ *= 0.07776
             }
-            Velocity.velocityInput = false
+            velocity.velocityInput = false
             attack = false
         } else if (player.hurtTime == 6 && player.onGround && !mc.gameSettings.keyBindJump.isKeyDown && spoofJump.get()) {
             mc.thePlayer.movementInput.jump = true
@@ -108,7 +107,7 @@ class GrimVerticalVelocity5 : VelocityMode("GrimVertical5") {
             if (player.onGround && player.hurtTime > 0 && playerJump.get()) {
                 player.jump()
             }
-            Velocity.velocityInput = true
+            velocity.velocityInput = true
             motionXZ = getMotionNoXZ(packet)
 
             val killAura = FDPNext.moduleManager[KillAura::class.java]!!
@@ -138,7 +137,7 @@ class GrimVerticalVelocity5 : VelocityMode("GrimVertical5") {
                 attack = true
                 mc.netHandler.addToSendQueue(C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.STOP_SPRINTING))
             }
-        } else if (packet is C0BPacketEntityAction && Velocity.velocityInput && sprintSpoof.get()) {
+        } else if (packet is C0BPacketEntityAction && velocity.velocityInput && sprintSpoof.get()) {
             val action = packet.getAction()
             if (action == C0BPacketEntityAction.Action.START_SPRINTING) {
                 if (lastSprinting) FDPNext.eventManager.callEvent(event)
