@@ -101,6 +101,7 @@
     "patcher.bugfixes.MixinEntityPackets",
     "patcher.bugfixes.MixinItemModelMesher",
     "patcher.bugfixes.MixinLazyLoadBase",
+    "patcher.bugfixes.MixinMusicTicker",
     "patcher.bugfixes.MixinRegionRenderCache",
     "patcher.bugfixes.MixinScoreboard",
     "patcher.bugfixes.MixinServerAddress",
