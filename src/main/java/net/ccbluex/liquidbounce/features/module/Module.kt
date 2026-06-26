@@ -89,6 +89,8 @@ open class Module @JvmOverloads constructor(
         } else {
             LanguageManager.getAndFormat("module.$name.name")
         }
+        val descKey = "module.$name.description"
+        description = if (LanguageManager.getAndFormat(descKey) == descKey) "" else LanguageManager.getAndFormat(descKey)
         // Apply defaultOn if no config has been loaded yet
         if (defaultOn && !state) {
             state = true
