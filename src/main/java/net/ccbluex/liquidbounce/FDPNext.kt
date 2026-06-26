@@ -77,6 +77,9 @@ object FDPNext {
     lateinit var macroManager: MacroManager
     lateinit var configManager: ConfigManager
 
+    // Shared state holders
+    val shitCode = net.ccbluex.liquidbounce.utils.ShitCode()
+
     // Some UI things
     lateinit var hud: HUD
     lateinit var mainMenu: GuiScreen
