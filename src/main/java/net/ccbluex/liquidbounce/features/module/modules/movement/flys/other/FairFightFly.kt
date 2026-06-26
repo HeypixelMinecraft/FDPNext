@@ -7,6 +7,7 @@ import net.ccbluex.liquidbounce.features.value.BoolValue
 import net.ccbluex.liquidbounce.features.value.FloatValue
 import net.ccbluex.liquidbounce.features.value.IntegerValue
 import net.ccbluex.liquidbounce.features.value.ListValue
+import net.ccbluex.liquidbounce.utils.ClientUtils
 import net.ccbluex.liquidbounce.utils.MovementUtils
 import net.ccbluex.liquidbounce.utils.PacketUtils
 import net.minecraft.network.play.client.C03PacketPlayer
@@ -234,7 +235,7 @@ class FairFightFly : FlyMode("FairFight") {
         // S08 flag 处理
         if (packet is S08PacketPlayerPosLook) {
             if (debugValue.get()) {
-                fly.alert("FairFight Fly: S08 flag received")
+                ClientUtils.displayAlert("FairFight Fly: S08 flag received")
             }
             if (autoDisableValue.get()) {
                 fly.state = false
