@@ -112,6 +112,13 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
     private val keepSprintValue = BoolValue("KeepSprint", true).displayable { attackDisplay.get() }
     private val noBadPacketsValue = BoolValue("NoBadPackets", false).displayable { attackDisplay.get() }
 
+    // FairFight bypass (基于 dw1e/FairFight 源码分析)
+    private val fairFightBypassValue = BoolValue("FairFightBypass", false).displayable { attackDisplay.get() }
+    private val fairFightInteractValue = BoolValue("FairFightInteract", true).displayable { fairFightBypassValue.get() }
+    private val fairFightHitSlowdownValue = BoolValue("FairFightHitSlowdown", true).displayable { fairFightBypassValue.get() }
+    private val fairFightMinDelayValue = IntegerValue("FairFightMinDelay", 9, 1, 20).displayable { fairFightBypassValue.get() }
+    private val fairFightMicroAimValue = BoolValue("FairFightMicroAim", true).displayable { fairFightBypassValue.get() }
+
     // AutoBlock
     private val autoBlockValue = ListValue("AutoBlock", arrayOf("Range", "Fake", "Off"), "Range").displayable { attackDisplay.get() }
 
@@ -121,7 +128,7 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
             if (i < newValue) set(i)
         }
     }.displayable { !autoBlockValue.equals("Off") && autoBlockValue.displayable }
-    private val autoBlockPacketValue = ListValue("AutoBlockPacket", arrayOf("AfterTick", "AfterAttack", "Vanilla", "Delayed", "Delayed2", "Legit", "OldIntave", "OldHypixel", "Test"), "Vanilla").displayable { autoBlockValue.equals("Range") && autoBlockValue.displayable }
+    private val autoBlockPacketValue = ListValue("AutoBlockPacket", arrayOf("AfterTick", "AfterAttack", "Vanilla", "Delayed", "Delayed2", "Legit", "OldIntave", "OldHypixel", "FairFight", "Test"), "Vanilla").displayable { autoBlockValue.equals("Range") && autoBlockValue.displayable }
     private val interactAutoBlockValue = BoolValue("InteractAutoBlock", false).displayable { autoBlockPacketValue.displayable }
     private val smartAutoBlockValue = BoolValue("SmartAutoBlock", false).displayable { autoBlockPacketValue.displayable }
     private val blockRateValue = IntegerValue("BlockRate", 100, 1, 100).displayable { autoBlockPacketValue.displayable }
@@ -283,6 +290,10 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
     private var attackDelay = 0L
     private var clicks = 0
 
+    // FairFight bypass state
+    private var ffLastAttackTick = 0
+    private var ffTickCounter = 0
+
     // Container Delay
     private var containerOpen = -1L
 
@@ -393,6 +404,23 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
             }
         }
 
+        if (autoBlockValue.equals("Range") && event.eventState == EventState.POST && autoBlockPacketValue.equals("FairFight")) {
+            // FairFight 绕过: 在 swingProgressInt == 1 时停止格挡, == 2 时重新开始
+            // 利用 KillAuraE 的 placed 状态: 先 RELEASE 再 PLACE, 顺序合法
+            // KillAuraB: 每次操作前发 ArmAnimation 避免不摆臂检测
+            if (mc.thePlayer.swingProgressInt == 1) {
+                if (blockingStatus) {
+                    mc.netHandler.addToSendQueue(C0APacketAnimation())
+                    stopBlocking()
+                }
+            } else if (mc.thePlayer.swingProgressInt == 2) {
+                if (!blockingStatus) {
+                    mc.netHandler.addToSendQueue(C0APacketAnimation())
+                    startBlocking(target, interactAutoBlockValue.get() && (mc.thePlayer.getDistanceToEntityBox(target) < maxRange))
+                }
+            }
+        }
+
         if (autoBlockValue.equals("Range") && autoBlockPacketValue.equals("Delayed") && delayBlock) {
               startBlocking(target, interactAutoBlockValue.get() && (mc.thePlayer.getDistanceToEntityBox(target) < maxRange))
               delayBlock = false
@@ -431,6 +459,11 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
     @EventTarget
     fun onUpdate(ignoredEvent: UpdateEvent) {
         if (clickOnly.get() && !mc.gameSettings.keyBindAttack.isKeyDown) return
+
+        // FairFight tick counter (用于 KillAuraD 攻击间隔检查)
+        if (fairFightBypassValue.get()) {
+            ffTickCounter++
+        }
 
         if (cancelRun) {
             currentTarget = null
@@ -711,10 +744,30 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
     private fun attackEntity(entity: EntityLivingBase) {
         if (packetSent && noBadPacketsValue.get()) return
 
+        // FairFight KillAuraD: 攻击间隔 > 8 tick 才完全跳过检查
+        if (fairFightBypassValue.get()) {
+            val elapsed = ffTickCounter - ffLastAttackTick
+            if (elapsed in 1 until fairFightMinDelayValue.get()) {
+                return
+            }
+        }
+
         // Call attack event
         val event = AttackEvent(entity)
         FDPNext.eventManager.callEvent(event)
         if (event.isCancelled) return
+
+        // FairFight pre-attack bypass sequence
+        if (fairFightBypassValue.get()) {
+            // KillAuraB: 攻击前发 ArmAnimation 避免不摆臂检测
+            mc.netHandler.addToSendQueue(C0APacketAnimation())
+            // KillAuraF: 攻击前 placed 或 !dug; KillAuraI: 攻击前 interact
+            if (fairFightInteractValue.get()) {
+                mc.netHandler.addToSendQueue(C02PacketUseEntity(entity, C02PacketUseEntity.Action.INTERACT_AT))
+            }
+            // KillAuraG: EntityAction 后发送 flying 重置 sent 状态
+            mc.netHandler.addToSendQueue(C03PacketPlayer(mc.thePlayer.onGround))
+        }
 
         // Stop blocking
         preAttack()
@@ -724,6 +777,23 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
         packetSent = true
         mc.netHandler.addToSendQueue(C02PacketUseEntity(entity, C02PacketUseEntity.Action.ATTACK))
 
+        // FairFight post-attack bypass
+        if (fairFightBypassValue.get()) {
+            // KillAuraB: 攻击后补 ArmAnimation
+            mc.netHandler.addToSendQueue(C0APacketAnimation())
+            // KillAuraG: 攻击后发 flying 重置 EntityAction sent 状态
+            mc.netHandler.addToSendQueue(C03PacketPlayer(mc.thePlayer.onGround))
+            // KillAuraA: 模拟 hitSlowdown (冲刺攻击时 motionXZ *= 0.6)
+            if (fairFightHitSlowdownValue.get() && mc.thePlayer.isSprinting) {
+                mc.thePlayer.motionX *= 0.6
+                mc.thePlayer.motionZ *= 0.6
+            }
+            // KillAuraK: 挂机检测 delta==0, 注入微小视角偏移
+            if (fairFightMicroAimValue.get()) {
+                mc.thePlayer.rotationYaw += 0.001f
+            }
+            ffLastAttackTick = ffTickCounter
+        }
 
         swingKeepSprint(entity)
 
@@ -742,6 +812,14 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
                     mc.netHandler.addToSendQueue(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem))
                     blockingStatus = false
                 }
+                "fairfight" -> {
+                    // FairFight KillAuraE: 检查 RELEASE_USE_ITEM 后 placed 状态
+                    // 绕过: 攻击前发 interact (不 RELEASE), 保留 blocking 状态
+                    // KillAuraF: 攻击前需 placed 或 !dug, 使用 interact 包满足
+                    if (currentTarget != null) {
+                        mc.netHandler.addToSendQueue(C02PacketUseEntity(currentTarget!!, C02PacketUseEntity.Action.INTERACT_AT))
+                    }
+                }
                 "legit", "oldhypixel", "test" -> null
                 else -> null
             }
@@ -756,6 +834,14 @@ class KillAura : Module(name = "KillAura", category = ModuleCategory.COMBAT, key
                 }
                 when (autoBlockPacketValue.get().lowercase()) {
                     "vanilla", "afterattack", "oldintave" -> startBlocking(entity, interactAutoBlockValue.get() && (mc.thePlayer.getDistanceToEntityBox(entity) < maxRange))
+                    "fairfight" -> {
+                        // FairFight 绕过:
+                        // KillAuraB: 攻击前/后发 ArmAnimation 摆臂包 (绕过不摆臂检测)
+                        mc.netHandler.addToSendQueue(C0APacketAnimation())
+                        // KillAuraH: 间歇性使用物品 (buffer.add() > 3 才 flag, 3 次内安全)
+                        // 攻击后立即重新 blocking, 但不 RELEASE, 避免触发 KillAuraE
+                        startBlocking(entity, interactAutoBlockValue.get() && (mc.thePlayer.getDistanceToEntityBox(entity) < maxRange))
+                    }
                     "aftertick", "oldhypixel", "legit", "delayed2", "test" -> null
                     "delayed" -> delayBlock = true
                     else -> null
