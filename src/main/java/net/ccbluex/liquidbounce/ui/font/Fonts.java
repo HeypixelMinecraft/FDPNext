@@ -229,7 +229,7 @@ public class Fonts {
                             }
                         }
                     }
-                } catch (java.net.URISyntaxException | java.io.IOException ignored) {
+                } catch (java.net.URISyntaxException | java.io.IOException | java.nio.file.FileSystemNotFoundException ignored) {
                     // 非文件系统（jar 内）路径，回退到显式列表
                     unpackFontList(resourceDir);
                 }
