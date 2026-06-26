@@ -1,6 +1,7 @@
 
 package net.ccbluex.liquidbounce.features.module.modules.movement
 
+import io.netty.buffer.Unpooled
 import net.ccbluex.liquidbounce.FDPNext
 import net.ccbluex.liquidbounce.event.*
 import net.ccbluex.liquidbounce.features.module.Module
@@ -15,6 +16,7 @@ import net.ccbluex.liquidbounce.features.value.IntegerValue
 import net.ccbluex.liquidbounce.features.value.ListValue
 import net.minecraft.item.*
 import net.minecraft.network.Packet
+import net.minecraft.network.PacketBuffer
 import net.minecraft.network.play.INetHandlerPlayServer
 import net.minecraft.network.play.client.*
 import net.minecraft.network.play.client.C03PacketPlayer.C06PacketPlayerPosLook
@@ -27,7 +29,7 @@ import kotlin.math.sqrt
 
 class NoSlow : Module(name = "NoSlow", category = ModuleCategory.MOVEMENT) {
     //Basic settings
-    private val modeValue = ListValue("PacketMode", arrayOf("Vanilla", "LiquidBounce", "Custom", "WatchDog", "Watchdog2", "NCP", "AAC", "AAC4", "AAC5","SwitchItem", "Matrix", "Vulcan", "Medusa", "GrimAC"), "Vanilla")
+    private val modeValue = ListValue("PacketMode", arrayOf("Vanilla", "LiquidBounce", "Custom", "WatchDog", "Watchdog2", "NCP", "AAC", "AAC4", "AAC5","SwitchItem", "Matrix", "Vulcan", "Medusa", "GrimAC", "PredictionSemi", "Prediction"), "Vanilla")
     private val antiSwitchItem = BoolValue("AntiSwitchItem", false)
     private val onlyGround = BoolValue("OnlyGround", false)
     private val onlyMove = BoolValue("OnlyMove", false)
@@ -47,6 +49,12 @@ class NoSlow : Module(name = "NoSlow", category = ModuleCategory.MOVEMENT) {
     private val bowStrafeMultiplier = FloatValue("BowStrafeMultiplier", 1.0F, 0.2F, 1.0F).displayable { bowModifyValue.get() }
     private val customOnGround = BoolValue("CustomOnGround", false).displayable { modeValue.equals("Custom") }
     private val customDelayValue = IntegerValue("CustomDelay", 60, 10, 200).displayable { modeValue.equals("Custom") }
+    private val swapDelay = IntegerValue("SwapDelay", 0, 0, 3).displayable { modeValue.equals("Prediction") }
+    private val blinkMode = BoolValue("BlinkMode", false).displayable { modeValue.equals("Prediction") }
+    private val c17Packet = BoolValue("C17Packet", false).displayable { modeValue.equals("Prediction") }
+    private val noAttack = BoolValue("NoAttack", false).displayable { modeValue.equals("Prediction") }
+    private val cancelTick = IntegerValue("CancelTick", 1, 0, 2).displayable { modeValue.equals("PredictionSemi") }
+    private val cancelTick2 = IntegerValue("CancelTick2", 1, 0, 2).displayable { modeValue.equals("PredictionSemi") }
     public val soulSandValue = BoolValue("SoulSand", true)
     //AACv4
     private val c07Value = BoolValue("AAC4-C07", true).displayable { modeValue.equals("AAC4") }
@@ -72,6 +80,11 @@ class NoSlow : Module(name = "NoSlow", category = ModuleCategory.MOVEMENT) {
     private var sendPacket = false
     private var lastBlockingStat = false
 
+    private var predictionDelay = 0
+    private var postBlock = false
+    private var predictionLastSlot = -1
+    private val predictionRandom = Random()
+
     override fun onDisable() {
         msTimer.reset()
         pendingFlagApplyPacket = false
@@ -79,6 +92,9 @@ class NoSlow : Module(name = "NoSlow", category = ModuleCategory.MOVEMENT) {
         packetBuf.clear()
         nextTemp = false
         waitC03 = false
+        predictionDelay = 0
+        postBlock = false
+        predictionLastSlot = -1
     }
 
     private fun sendPacket(
@@ -150,6 +166,13 @@ class NoSlow : Module(name = "NoSlow", category = ModuleCategory.MOVEMENT) {
         
         val killAura = FDPNext.moduleManager[KillAura::class.java]!!
         val heldItem = mc.thePlayer.heldItem?.item
+        
+        if (modeValue.equals("Prediction") && postBlock && event.eventState == EventState.POST) {
+            if (blinkMode.get()) {
+                PacketUtils.sendPacketNoEvent(C08PacketPlayerBlockPlacement(mc.thePlayer.heldItem))
+            }
+            postBlock = false
+        }
         if (consumeModifyValue.get() && mc.thePlayer.isUsingItem && (heldItem is ItemFood || heldItem is ItemPotion || heldItem is ItemBucketMilk)) {
             if ((consumeTimingValue.equals("Pre") && event.eventState == EventState.PRE) || (consumeTimingValue.equals("Post") && event.eventState == EventState.POST)) {
                 sendPacket2(consumePacketValue.get())
@@ -241,6 +264,18 @@ class NoSlow : Module(name = "NoSlow", category = ModuleCategory.MOVEMENT) {
                     PacketUtils.sendPacketNoEvent(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem  % 8 + 1))
                     PacketUtils.sendPacketNoEvent(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem))
                 }
+                
+                "predictionsemi" -> {
+                    if (event.eventState == EventState.PRE) {
+                        mc.netHandler.addToSendQueue(C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos(-1, -1, -1), EnumFacing.DOWN))
+                    } else {
+                        mc.netHandler.addToSendQueue(C08PacketPlayerBlockPlacement(BlockPos(-1, -1, -1), 255, mc.thePlayer.inventory.getCurrentItem(), 0f, 0f, 0f))
+                    }
+                }
+                
+                "prediction" -> {
+                    // Handled in onUpdate (slot swapping) and onMotion POST (re-block)
+                }
             }
         }
     }
@@ -306,6 +341,49 @@ class NoSlow : Module(name = "NoSlow", category = ModuleCategory.MOVEMENT) {
                 nextTemp = true
                 waitC03 = modeValue.equals("Vulcan")
                 msTimer.reset()
+            }
+        }
+        
+        if (modeValue.equals("Prediction")) {
+            val heldItem = mc.thePlayer.heldItem?.item
+            if (heldItem is ItemSword && mc.thePlayer.isUsingItem && isBlocking) {
+                predictionDelay--
+                if (predictionDelay < 0) {
+                    val killAura = FDPNext.moduleManager[KillAura::class.java]
+                    val skipSwap = noAttack.get() && killAura?.state == true && killAura.blockingStatus
+                    
+                    if (!skipSwap) {
+                        var randomSlot = predictionRandom.nextInt(9)
+                        while (randomSlot == mc.thePlayer.inventory.currentItem) {
+                            randomSlot = predictionRandom.nextInt(9)
+                        }
+                        
+                        if (blinkMode.get()) {
+                            predictionLastSlot = randomSlot
+                        }
+                        
+                        PacketUtils.sendPacketNoEvent(C09PacketHeldItemChange(randomSlot))
+                        
+                        if (c17Packet.get()) {
+                            PacketUtils.sendPacketNoEvent(C17PacketCustomPayload("woshijiejue", PacketBuffer(Unpooled.buffer())))
+                        }
+                        
+                        PacketUtils.sendPacketNoEvent(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem))
+                        
+                        postBlock = true
+                        predictionDelay = swapDelay.get()
+                    }
+                }
+            } else if (postBlock) {
+                if (blinkMode.get()) {
+                    val randomSlot = predictionRandom.nextInt(9)
+                    PacketUtils.sendPacketNoEvent(C09PacketHeldItemChange(randomSlot))
+                    if (c17Packet.get()) {
+                        PacketUtils.sendPacketNoEvent(C17PacketCustomPayload("woshijiejue", PacketBuffer(Unpooled.buffer())))
+                    }
+                    PacketUtils.sendPacketNoEvent(C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem))
+                }
+                postBlock = false
             }
         }
     }
