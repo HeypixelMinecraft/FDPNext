@@ -24,11 +24,15 @@ class MainMenuSidebar(
     var selectedId: String = buttons.firstOrNull()?.id ?: ""
         private set
 
+    // Per-button hover alpha [0.0, 1.0] for smooth animation
+    private val hoverAlphas = FloatArray(buttons.size)
+
     private val x: Int get() = 12
     private val y: Int get() = 60
     private val width: Int get() = 100
     private val buttonHeight: Int get() = 24
     private val gap: Int get() = 4
+    private val hoverSpeed: Float = 0.15f
 
     fun buttonRect(index: Int): Rect {
         val by = y + index * (buttonHeight + gap)
@@ -51,12 +55,22 @@ class MainMenuSidebar(
             val hovered = r.contains(mouseX, mouseY)
             val selected = btn.id == selectedId
 
-            val bg = when {
-                selected -> accentColor()
-                hovered -> Color(255, 255, 255, 25).rgb
-                else -> Color(0, 0, 0, 0).rgb
+            // Animate hover alpha toward target (1.0 = hovered, 0.0 = not hovered)
+            val target = if (hovered) 1.0f else 0.0f
+            hoverAlphas[index] += (target - hoverAlphas[index]) * hoverSpeed
+            // Snap when close enough to avoid endless micro-interpolation
+            if (kotlin.math.abs(hoverAlphas[index] - target) < 0.005f) {
+                hoverAlphas[index] = target
             }
-            if (bg != Color(0, 0, 0, 0).rgb) {
+            val alpha = hoverAlphas[index]
+
+            if (alpha > 0.01f) {
+                val bg = if (selected) {
+                    val c = accentColor()
+                    Color(c shr 16 and 0xFF, c shr 8 and 0xFF, c and 0xFF, (alpha * 255).toInt().coerceIn(0, 255)).rgb
+                } else {
+                    Color(255, 255, 255, (alpha * 30).toInt().coerceIn(0, 255)).rgb
+                }
                 RenderUtils.drawRoundedCornerRect(r.x, r.y, r.x2, r.y2, 4f, bg)
             }
 
