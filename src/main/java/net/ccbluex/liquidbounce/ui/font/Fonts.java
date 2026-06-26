@@ -212,9 +212,49 @@ public class Fonts {
 
     private static void initFonts() {
         try {
-            initSingleFont("regular.ttf", "assets/minecraft/FDPNext/font/regular.ttf");
+            // 释放资源目录下所有 ttf 字体到运行时 fontsDir，
+            // 否则 getFont() 通过 FileInputStream 读取时会报 FileNotFoundException
+            final String resourceDir = "assets/minecraft/FDPNext/font/";
+            final java.net.URL dirUrl = Fonts.class.getClassLoader().getResource(resourceDir);
+            if (dirUrl != null) {
+                java.nio.file.Path resPath;
+                try {
+                    resPath = java.nio.file.Paths.get(dirUrl.toURI());
+                    if (java.nio.file.Files.isDirectory(resPath)) {
+                        try (java.nio.file.DirectoryStream<java.nio.file.Path> stream =
+                                 java.nio.file.Files.newDirectoryStream(resPath, "*.ttf")) {
+                            for (java.nio.file.Path p : stream) {
+                                String name = p.getFileName().toString();
+                                initSingleFont(name, resourceDir + name);
+                            }
+                        }
+                    }
+                } catch (java.net.URISyntaxException | java.io.IOException ignored) {
+                    // 非文件系统（jar 内）路径，回退到显式列表
+                    unpackFontList(resourceDir);
+                }
+            } else {
+                unpackFontList(resourceDir);
+            }
         }catch(IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void unpackFontList(final String resourceDir) throws IOException {
+        // 显式列表兜底，覆盖 loadFonts()/FontDetails 注解引用的所有字体
+        final String[] fontFiles = {
+            "Roboto-Medium.ttf", "Roboto-Bold.ttf", "Roboto-Regular.ttf",
+            "SF.ttf", "SFBOLD.ttf", "stylesicons.ttf",
+            "Tahoma.ttf", "Verdana.ttf", "Ubuntu.ttf",
+            "tenacity.ttf", "tenacity-bold.ttf", "Tenacityicon.ttf",
+            "jello.ttf", "Icon.ttf", "Bangers.ttf", "Comfortaa.ttf",
+            "Rajdhani.ttf", "Quicksand.ttf", "Orbitron.ttf", "Nunito.ttf",
+            "mojangles.ttf", "mojanglesbold.ttf", "mainmenu.ttf",
+            "check.ttf", "regular.ttf"
+        };
+        for (String name : fontFiles) {
+            initSingleFont(name, resourceDir + name);
         }
     }
 
