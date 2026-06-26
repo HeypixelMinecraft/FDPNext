@@ -11,6 +11,8 @@ import net.ccbluex.liquidbounce.features.special.GradientBackground;
 import net.ccbluex.liquidbounce.font.FontLoaders;
 import net.ccbluex.liquidbounce.ui.client.GuiBackground;
 import net.ccbluex.liquidbounce.utils.particles.ParticleUtils;
+import net.ccbluex.liquidbounce.utils.render.GLUtils;
+import net.ccbluex.liquidbounce.utils.render.shader.shaders.AuroraShader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
@@ -134,13 +136,18 @@ public abstract class MixinGuiScreen {
         GlStateManager.disableFog();
         if(GuiBackground.Companion.getEnabled()) {
             if (FDPNext.INSTANCE.getBackground() == null) {
-                GradientBackground.INSTANCE.draw(width, height);
+                GL11.glEnable(GL11.GL_BLEND);
+                GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                AuroraShader.INSTANCE.startShader();
+                GLUtils.drawQuads(0f, 0f, (float) width, (float) height);
+                AuroraShader.INSTANCE.stopShader();
+                GL11.glDisable(GL11.GL_BLEND);
             }else{
                 mc.getTextureManager().bindTexture(FDPNext.INSTANCE.getBackground());
                 Gui.drawModalRectWithCustomSizedTexture(0, 0, 0f, 0f, width, height, width, height);
             }
-        
-            
+
+
             GlStateManager.resetColor();
             if (GuiBackground.Companion.getParticles())
                 ParticleUtils.drawParticles(Mouse.getX() * width / mc.displayWidth, height - Mouse.getY() * height / mc.displayHeight - 1);
