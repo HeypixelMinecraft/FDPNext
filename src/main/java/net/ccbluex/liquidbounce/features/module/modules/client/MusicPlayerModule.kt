@@ -28,7 +28,7 @@ class MusicPlayerModule : Module(
     keyBind = org.lwjgl.input.Keyboard.KEY_NONE
 ) {
 
-    val sourceValue = ListValue("Source", arrayOf("Netease", "Kugou", "YoutubeMusic"), "Netease")
+    val sourceValue = ListValue("Source", arrayOf("Netease", "Kugou", "YoutubeMusic", "QiShui"), "Netease")
     val volumeValue = FloatValue("Volume", 0.5f, 0f, 1f)
     val loopValue = BoolValue("Loop", false)
 
@@ -53,6 +53,7 @@ class MusicPlayerModule : Module(
             "Netease" -> MusicSource.NETEASE
             "Kugou" -> MusicSource.KUGOU
             "YoutubeMusic" -> MusicSource.YOUTUBE_MUSIC
+            "QiShui" -> MusicSource.QISHUI
             else -> MusicSource.NETEASE
         }
         if (MusicPlayer.currentSource != src) {
