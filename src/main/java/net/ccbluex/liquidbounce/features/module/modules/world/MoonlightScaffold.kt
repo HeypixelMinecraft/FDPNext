@@ -276,7 +276,15 @@ class MoonlightScaffold : Module(name = "MoonlightScaffold", category = ModuleCa
                 placed = true
             }
         } else {
-            val ray = mc.objectMouseOver
+            // RayTrace 必须基于 scaffold 的（静默）目标旋转，而非 mc.objectMouseOver。
+            // 旋转通过 setTargetRotation 写入出站封包，不会改动客户端镜头，因此
+            // mc.objectMouseOver 反映的是玩家真实准星，静默放置时不命中目标方块。
+            val rot = rotation
+            val ray = if (rot != null) {
+                rayTraceWithRotation(rot[0], rot[1], mc.playerController.blockReachDistance.toDouble())
+            } else {
+                mc.objectMouseOver
+            }
             if (ray != null && ray.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK &&
                 mc.playerController.onPlayerRightClick(mc.thePlayer, mc.theWorld, heldItem, ray.blockPos, ray.sideHit, ray.hitVec)
             ) {
