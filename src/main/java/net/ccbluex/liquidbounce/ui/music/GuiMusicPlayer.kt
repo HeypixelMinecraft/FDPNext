@@ -5,6 +5,7 @@
  */
 package net.ccbluex.liquidbounce.ui.music
 
+import net.ccbluex.liquidbounce.ui.i18n.LanguageManager
 import net.ccbluex.liquidbounce.ui.music.MusicPlayer as Player
 import net.ccbluex.liquidbounce.utils.render.RenderUtils
 import net.ccbluex.liquidbounce.ui.font.Fonts
@@ -51,11 +52,11 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
 
         // 控制按钮
         buttonList.add(GuiButton(10, 10, height - 70, 50, 20, "<<<"))
-        buttonList.add(GuiButton(11, 65, height - 70, 80, 20, "Play/Pause"))
+        buttonList.add(GuiButton(11, 65, height - 70, 80, 20, LanguageManager.get("ui.music.playPause")))
         buttonList.add(GuiButton(12, 150, height - 70, 50, 20, ">>>"))
-        buttonList.add(GuiButton(13, 205, height - 70, 60, 20, "Stop"))
-        buttonList.add(GuiButton(14, 270, height - 70, 60, 20, if (Player.loop) "Loop: ON" else "Loop: OFF"))
-        buttonList.add(GuiButton(0, width - 80, height - 70, 70, 20, "Back"))
+        buttonList.add(GuiButton(13, 205, height - 70, 60, 20, LanguageManager.get("ui.music.stop")))
+        buttonList.add(GuiButton(14, 270, height - 70, 60, 20, if (Player.loop) LanguageManager.get("ui.music.loopOn") else LanguageManager.get("ui.music.loopOff")))
+        buttonList.add(GuiButton(0, width - 80, height - 70, 70, 20, LanguageManager.get("ui.back")))
 
         // 注册回调
         Player.onSearchComplete = { results ->
@@ -75,16 +76,16 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
         drawBackground(0)
 
         // 标题
-        Fonts.font40.drawCenteredString("FDPNext Music Player", width / 2f, 5f, Color.WHITE.rgb)
+        Fonts.font40.drawCenteredString(LanguageManager.get("ui.music.title"), width / 2f, 5f, Color.WHITE.rgb)
 
         // 当前播放状态
         val track = Player.currentTrack
         val stateText = when {
-            Player.isPlaying -> "▶ Playing"
-            Player.isPaused -> "⏸ Paused"
-            else -> "⏹ Stopped"
+            Player.isPlaying -> LanguageManager.get("ui.music.playing")
+            Player.isPaused -> LanguageManager.get("ui.music.paused")
+            else -> LanguageManager.get("ui.music.stopped")
         }
-        val trackText = if (track != null) "${track.name} - ${track.artist} [${track.source.displayName}]" else "No track"
+        val trackText = if (track != null) "${track.name} - ${track.artist} [${track.source.displayName}]" else LanguageManager.get("ui.music.noTrack")
         Fonts.font35.drawString("$stateText | $trackText", 10, height - 95, Color.WHITE.rgb)
 
         // 进度条
@@ -99,7 +100,7 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
 
         // 搜索框
         searchField.drawTextBox()
-        Fonts.font35.drawString("Search:", 10, 18, Color.WHITE.rgb)
+        Fonts.font35.drawString(LanguageManager.get("ui.music.search"), 10, 18, Color.WHITE.rgb)
 
         // 搜索结果列表
         drawSearchList(mouseX, mouseY)
@@ -155,9 +156,9 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
 
         // 搜索中提示
         if (Player.searching) {
-            Fonts.font35.drawCenteredString("Searching...", (listX + listWidth / 2).toFloat(), (listY + listHeight / 2).toFloat(), Color.YELLOW.rgb)
+            Fonts.font35.drawCenteredString(LanguageManager.get("ui.music.searching"), (listX + listWidth / 2).toFloat(), (listY + listHeight / 2).toFloat(), Color.YELLOW.rgb)
         } else if (searchResultsList.isEmpty()) {
-            Fonts.font35.drawCenteredString("No results. Try searching.", (listX + listWidth / 2).toFloat(), (listY + listHeight / 2).toFloat(), Color.GRAY.rgb)
+            Fonts.font35.drawCenteredString(LanguageManager.get("ui.music.noResults"), (listX + listWidth / 2).toFloat(), (listY + listHeight / 2).toFloat(), Color.GRAY.rgb)
         }
 
         // 滚动条
@@ -188,7 +189,7 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
             13 -> Player.stop()
             14 -> {
                 Player.loop = !Player.loop
-                button.displayString = if (Player.loop) "Loop: ON" else "Loop: OFF"
+                button.displayString = if (Player.loop) LanguageManager.get("ui.music.loopOn") else LanguageManager.get("ui.music.loopOff")
             }
         }
     }
