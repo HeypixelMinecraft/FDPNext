@@ -26,8 +26,8 @@ import kotlin.math.sin
 class MoveFix : Module("MoveFix", category = ModuleCategory.MOVEMENT) {
 
     val mode = ListValue("Mode", arrayOf("Bloxd"), "Bloxd")
-    private val silentFixValue = BoolValue("Silent", true) { mode.get() == "Grim" }
-    private val spiderValue = BoolValue("Spider", true) { mode.get() == "Bloxd" }
+    private val silentFixValue = BoolValue("Silent", true).displayable { mode.get() == "Grim" }
+    private val spiderValue = BoolValue("Spider", true).displayable { mode.get() == "Bloxd" }
 
     private var knockbackTime: Long = 0
     private var jumpfunny = 0
