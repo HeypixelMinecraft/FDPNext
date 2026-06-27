@@ -11,12 +11,16 @@ import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.features.module.Module
 import net.ccbluex.liquidbounce.features.module.ModuleCategory
 import net.ccbluex.liquidbounce.utils.MovementUtils
+import net.ccbluex.liquidbounce.utils.block.BlockUtils
 import net.ccbluex.liquidbounce.features.value.FloatValue
 import net.ccbluex.liquidbounce.features.value.ListValue
+import net.minecraft.init.Blocks
+import net.minecraft.network.play.client.C07PacketPlayerDigging
+import net.minecraft.util.EnumFacing
 
 class NoWeb : Module(name = "NoWeb", category = ModuleCategory.MOVEMENT) {
 
-    private val modeValue = ListValue("Mode", arrayOf("None", "FastFall", "OldAAC", "LAAC", "Rewinside", "Horizon", "Spartan", "AAC4", "AAC5", "Matrix", "Test"), "None")
+    private val modeValue = ListValue("Mode", arrayOf("None", "FastFall", "OldAAC", "LAAC", "Rewinside", "Horizon", "Spartan", "AAC4", "AAC5", "Matrix", "OldGrim", "Test"), "None")
     private val horizonSpeed = FloatValue("HorizonSpeed", 0.1F, 0.01F, 0.8F)
 
     private var usedTimer = false
@@ -120,6 +124,20 @@ class NoWeb : Module(name = "NoWeb", category = ModuleCategory.MOVEMENT) {
 
                 if (mc.thePlayer.onGround) {
                     mc.thePlayer.jump()
+                }
+            }
+            "oldgrim" -> {
+                // Skidded from AirClient OldGrim: drop web client-side and tell the
+                // server we stopped digging each nearby web block.
+                mc.thePlayer.isInWeb = false
+                BlockUtils.searchBlocks(2).forEach { (pos, block) ->
+                    if (block === Blocks.web) {
+                        mc.netHandler.addToSendQueue(
+                            C07PacketPlayerDigging(
+                                C07PacketPlayerDigging.Action.STOP_DESTROY_BLOCK, pos, EnumFacing.DOWN
+                            )
+                        )
+                    }
                 }
             }
         }
