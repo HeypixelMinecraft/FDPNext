@@ -11,7 +11,7 @@
  */
 
 uniform sampler2D uBlurTex;
-uniform vec2 uScreenSize;    // displayWidth, displayHeight (real pixels)
+uniform vec2 uScreenSize;    // scaledWidth, scaledHeight (matches HUD coordinate space)
 uniform float uPowerFactor;  // superellipse power (controls corner roundness)
 uniform float uNoise;
 uniform float uRefractionPower;
@@ -52,8 +52,8 @@ void main() {
     float fresnel = pow(1.0 - dist, 3.0);
     float refraction = pow(f(dist), uRefractionPower);
 
-    // Screen-space UV from gl_FragCoord
-    vec2 screenUV = gl_FragCoord.xy / uScreenSize;
+    // Screen-space UV from gl_FragCoord (flip Y: HUD is top-left origin, GL is bottom-left)
+    vec2 screenUV = vec2(gl_FragCoord.x, uScreenSize.y - gl_FragCoord.y) / uScreenSize;
 
     // Refraction offset: shift the screen UV based on local position
     vec2 localOffset = (localUV - CENTER) * 2.0;

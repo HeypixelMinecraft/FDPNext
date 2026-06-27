@@ -43,8 +43,11 @@ object LiquidGlass : MinecraftInstance() {
     }
 
     private fun ensureFramebuffer() {
-        val width = mc.displayWidth
-        val height = mc.displayHeight
+        // Use scaled resolution to match HUD rendering coordinate space.
+        // gl_FragCoord is in scaled coords, so uScreenSize must also be scaled.
+        val sr = net.minecraft.client.gui.ScaledResolution(mc)
+        val width = sr.scaledWidth
+        val height = sr.scaledHeight
         val fb = blurFramebuffer
         if (fb == null || fb.framebufferWidth != width || fb.framebufferHeight != height) {
             fb?.deleteFramebuffer()
