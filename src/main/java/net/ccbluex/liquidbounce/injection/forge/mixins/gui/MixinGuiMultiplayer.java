@@ -28,9 +28,17 @@ public abstract class MixinGuiMultiplayer extends MixinGuiScreen {
         buttonList.add(new GuiButton(998, width - 104, 8, 98, 20, "%ui.serverSpoof%"));
         buttonList.add(new GuiButton(999, width - 208, 8, 98, 20, "Proxy"));
 
-        // Built-in ViaMCP version slider (multi-version selector)
-        if (de.florianmichael.viamcp.ViaMCP.INSTANCE != null && de.florianmichael.viamcp.ViaMCP.INSTANCE.getAsyncVersionSlider() != null) {
-            buttonList.add(de.florianmichael.viamcp.ViaMCP.INSTANCE.getAsyncVersionSlider());
+        // Built-in ViaMCP version slider (multi-version selector). Created lazily here, since
+        // GuiButton construction is only safe once the client GUI is up.
+        final de.florianmichael.viamcp.ViaMCP via = de.florianmichael.viamcp.ViaMCP.INSTANCE;
+        if (via != null) {
+            try {
+                if (via.getAsyncVersionSlider() == null) {
+                    via.initAsyncSlider(148, 8, 110, 20);
+                }
+                buttonList.add(via.getAsyncVersionSlider());
+            } catch (Throwable ignored) {
+            }
         }
     }
 
