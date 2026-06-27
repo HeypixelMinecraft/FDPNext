@@ -32,7 +32,7 @@ object LiquidGlassShader : Shader("liquidglass.frag") {
     private var quadCenterY = 0f
     private var quadSizeX = 0f
     private var quadSizeY = 0f
-    private var powerFactor = 4f
+    private var radius = 8f
 
     fun isAvailable(): Boolean = programId != 0
 
@@ -41,7 +41,7 @@ object LiquidGlassShader : Shader("liquidglass.frag") {
         setupUniform("uScreenSize")
         setupUniform("uQuadCenter")
         setupUniform("uQuadSize")
-        setupUniform("uPowerFactor")
+        setupUniform("uRadius")
         setupUniform("uNoise")
         setupUniform("uRefractionPower")
         setupUniform("uGlowWeight")
@@ -55,7 +55,7 @@ object LiquidGlassShader : Shader("liquidglass.frag") {
         GL20.glUniform2f(getUniform("uScreenSize"), mc.displayWidth.toFloat(), mc.displayHeight.toFloat())
         GL20.glUniform2f(getUniform("uQuadCenter"), quadCenterX, quadCenterY)
         GL20.glUniform2f(getUniform("uQuadSize"), quadSizeX, quadSizeY)
-        GL20.glUniform1f(getUniform("uPowerFactor"), powerFactor)
+        GL20.glUniform1f(getUniform("uRadius"), radius)
         // Glass look defaults from the reference USAGE guide.
         GL20.glUniform1f(getUniform("uNoise"), 0.03f)
         GL20.glUniform1f(getUniform("uRefractionPower"), 0.75f)
@@ -72,9 +72,9 @@ object LiquidGlassShader : Shader("liquidglass.frag") {
      * renderY)`), so the quad is drawn in local coords [0,0,w,h] while the uniforms are computed
      * from the resulting absolute on-screen position so `gl_FragCoord` lines up.
      *
-     * [power] is the superellipse exponent (corner squareness): ~2 = ellipse, higher = squircle.
+     * [roundness] is 0..1: 1 = full pill (corner radius = half the shorter side), 0 = sharp rect.
      */
-    fun draw(renderX: Double, renderY: Double, w: Float, h: Float, scale: Float, power: Float) {
+    fun draw(renderX: Double, renderY: Double, w: Float, h: Float, scale: Float, roundness: Float) {
         if (!isAvailable() || w <= 0f || h <= 0f) return
 
         val displayW = mc.displayWidth
@@ -88,9 +88,9 @@ object LiquidGlassShader : Shader("liquidglass.frag") {
         // Absolute scaled-resolution rect = (renderX/Y + local) * scale, then to display px.
         val absCenterX = (renderX.toFloat() + w / 2f) * scale
         val absCenterY = (renderY.toFloat() + h / 2f) * scale
-        powerFactor = power.coerceAtLeast(2f)
         quadSizeX = w * scale * factorX
         quadSizeY = h * scale * factorY
+        radius = minOf(quadSizeX, quadSizeY) * 0.5f * roundness.coerceIn(0f, 1f)
         quadCenterX = absCenterX * factorX
         quadCenterY = displayH - absCenterY * factorY
 

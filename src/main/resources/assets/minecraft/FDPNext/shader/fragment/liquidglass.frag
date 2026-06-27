@@ -4,15 +4,15 @@
  * The original relies on a custom vertex shader (liquidGlassV2.vsh, not published) to supply
  * vMidPointNDC / vLocalOffsetNDC varyings. FDPNext shares a single passthrough vertex.vert, so
  * this version derives those values in-fragment from gl_FragCoord + uniforms (uScreenSize,
- * uQuadCenter, uQuadSize) instead. Everything else (superellipse SDF, refraction, grain, rim
- * glow) is kept faithful to the original.
+ * uQuadCenter, uQuadSize). The shape is an aspect-correct rounded rectangle (true pill caps)
+ * rather than the original normalized superellipse, which distorted on wide quads.
  */
 
 #version 120
 
 uniform sampler2D uBlurTex;
 
-uniform float uPowerFactor;
+uniform float uRadius;        // corner radius in quad pixels
 uniform float uNoise;
 uniform float uRefractionPower;
 uniform float uGlowWeight;
@@ -20,7 +20,7 @@ uniform float uGlowBias;
 uniform float uGlowEdge0;
 uniform float uGlowEdge1;
 
-// Replaces the missing vertex shader: quad geometry in display pixels (bottom-left origin,
+// Replaces the missing vertex shader: quad geometry in display px (bottom-left origin,
 // matching gl_FragCoord) so we can rebuild the NDC midpoint / local offset here.
 uniform vec2 uScreenSize;
 uniform vec2 uQuadCenter;
@@ -35,13 +35,6 @@ float rand(vec2 co) {
 
 float f(float x) {
     return 1.0 - 2.3 * pow(5.2 * M_E, -6.9 * x - 0.7);
-}
-
-float sdSuperellipse(vec2 p, float n, float r) {
-    vec2 absP = abs(p);
-    float numerator = pow(absP.x, n) + pow(absP.y, n) - pow(r, n);
-    float denominator = n * sqrt(pow(absP.x, 2.0 * n - 2.0) + pow(absP.y, 2.0 * n - 2.0)) + 0.00001;
-    return numerator / denominator;
 }
 
 float Glow(vec2 uv) {
@@ -60,16 +53,19 @@ void main() {
     vec2 vMidPointNDC = midNDC;
     vec2 vLocalOffsetNDC = fragNDC - midNDC;
 
-    vec2 p = (localUV - CENTER) * 2.0;
+    // Rounded-rectangle SDF in the quad's pixel space → aspect-correct, real semicircular caps.
+    vec2 halfSize = uQuadSize * 0.5;
+    vec2 pPix = (localUV - CENTER) * uQuadSize;
+    float r = min(uRadius, min(halfSize.x, halfSize.y));
+    vec2 q = abs(pPix) - halfSize + vec2(r);
+    float sd = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; // <0 inside, in pixels
 
-    float d = sdSuperellipse(p, uPowerFactor, 1.0);
-
-    // Small edge smoothing only for corner stair-stepping.
-    float edge = 1.0 - smoothstep(-0.003, 0.003, d);
-
+    // ~1px antialiased edge.
+    float edge = 1.0 - smoothstep(-1.0, 1.0, sd);
     if (edge <= 0.0) discard;
 
-    float dist = max(-d, 0.0);
+    // Normalized inside distance (0 at the edge → 1 deep inside) for refraction + rim glow.
+    float dist = clamp(-sd / max(min(halfSize.x, halfSize.y), 1.0), 0.0, 1.0);
 
     // Refraction.
     float refraction = pow(f(dist), uRefractionPower);
@@ -86,8 +82,6 @@ void main() {
 
     // Stable screen-space grain.
     float noise = (rand(gl_FragCoord.xy * 1e-3) - 0.5) * uNoise;
-
-    // Subtle glass grain.
     color.rgb += vec3(noise);
 
     // Keep RGB coverage aligned with alpha.
@@ -95,13 +89,8 @@ void main() {
 
     // Directional rim lighting.
     float glow = Glow(localUV);
-
-    // Edge glow mask.
     float glowMask = smoothstep(uGlowEdge0, uGlowEdge1, dist);
-
-    // Directional rim lighting.
     float glowStrength = glow * uGlowWeight * glowMask + 1.0 + uGlowBias;
-
     color.rgb *= glowStrength;
 
     gl_FragColor = vec4(color.rgb, edge);

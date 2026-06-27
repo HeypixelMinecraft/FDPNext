@@ -35,7 +35,7 @@ class DynamicIsland : Element() {
     private val pingValue = BoolValue("Ping", true)
 
     private val glassValue = BoolValue("Glass", true)
-    private val roundingValue = FloatValue("Corner", 4f, 2f, 10f)
+    private val roundnessValue = FloatValue("Roundness", 1f, 0f, 1f)
     private val heightValue = FloatValue("Height", 18f, 12f, 30f)
     private val textColorValue = ColorValue("TextColor", Color(235, 238, 245).rgb)
 
@@ -76,12 +76,14 @@ class DynamicIsland : Element() {
         }
         w += pad
 
+        val roundness = roundnessValue.get()
+
         // Background
         if (glassValue.get() && LiquidGlassShader.isAvailable()) {
-            LiquidGlassShader.draw(renderX, renderY, w, h, scale, roundingValue.get())
+            LiquidGlassShader.draw(renderX, renderY, w, h, scale, roundness)
         } else {
             BlurUtils.draw((renderX * scale).toFloat(), (renderY * scale).toFloat(), w * scale, h * scale, 6f)
-            RenderUtils.drawRoundedCornerRect(0f, 0f, w, h, h / 2.5f, Color(18, 18, 26, 170).rgb)
+            RenderUtils.drawRoundedCornerRect(0f, 0f, w, h, (h / 2f) * roundness, Color(18, 18, 26, 170).rgb)
         }
 
         // Foreground row
@@ -90,7 +92,8 @@ class DynamicIsland : Element() {
             RenderUtils.drawImage(logo, cx.toInt(), ((h - logoSize) / 2f).toInt(), logoSize.toInt(), logoSize.toInt())
             cx += logoSize + gap
         }
-        val textY = (h - font.height) / 2f
+        // +3 compensates GameFontRenderer.drawString's internal `y - 3F`, so text centers on the logo.
+        val textY = (h - font.height) / 2f + 3f
         parts.forEachIndexed { i, p ->
             font.drawString(p.first, cx, textY, p.second)
             cx += font.getStringWidth(p.first)
