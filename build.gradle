@@ -76,6 +76,10 @@ dependencies {
 
     include("com.github.UnlegitMC:Astar3d:bec2291cf2") // pathfinding
 
+    // MP3 解码库，用于音乐播放器
+    include 'javazoom:jlayer:1.0.1'
+    include 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+
     include fileTree(include: ["*.jar"], dir: "libs")
 }
 
