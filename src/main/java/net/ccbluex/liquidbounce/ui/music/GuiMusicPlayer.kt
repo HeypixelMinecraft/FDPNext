@@ -31,6 +31,11 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
     private val itemHeight = 32
     private val visibleItems = 8
 
+    // 歌词面板
+    private var lyricScroll = 0
+    private val lyricVisibleLines = 12
+    private val lyricLineHeight = 16
+
     private val sourceButtons = mutableListOf<GuiButton>()
 
     override fun initGui() {
@@ -64,8 +69,9 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
             searchResultsList.addAll(results)
             scrollOffset = 0
         }
-        Player.onTrackChanged = { _ -> }
+        Player.onTrackChanged = { _ -> lyricScroll = 0 }
         Player.onPlayStateChanged = { }
+        Player.onLyricsUpdated = { lyricScroll = 0 }
 
         // 初始化搜索结果
         searchResultsList.clear()
@@ -104,6 +110,9 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
 
         // 搜索结果列表
         drawSearchList(mouseX, mouseY)
+
+        // 歌词面板
+        drawLyricsPanel(mouseX, mouseY)
 
         // 源按钮高亮
         sourceButtons.forEachIndexed { i, btn ->
@@ -173,6 +182,121 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
         }
     }
 
+    /**
+     * 绘制歌词面板
+     *
+     * 布局：位于搜索列表右侧，宽度自适应到屏幕边缘。
+     * - 网易云/酷狗：LRC 带时间戳，当前行高亮，自动滚动让当前行显示在中间。
+     * - YouTube Music：纯文本无时间戳，所有行普通显示，仅支持手动滚动。
+     */
+    private fun drawLyricsPanel(mouseX: Int, mouseY: Int) {
+        val panelX = listX + listWidth + 10
+        val panelY = listY
+        val panelWidth = (width - panelX - 10).coerceAtLeast(120)
+        val panelHeight = visibleItems * itemHeight
+
+        // 背景
+        RenderUtils.drawRoundedCornerRect(
+            panelX.toFloat(), panelY.toFloat(),
+            (panelX + panelWidth).toFloat(), (panelY + panelHeight).toFloat(),
+            4f, Color(30, 30, 30, 200).rgb
+        )
+
+        // 标题
+        Fonts.font35.drawString(LanguageManager.get("ui.music.lyrics"), panelX + 6, panelY - 12, Color.WHITE.rgb)
+
+        val lyrics = Player.currentLyrics
+
+        // 加载中提示
+        if (Player.fetchingLyrics) {
+            Fonts.font35.drawCenteredString(
+                LanguageManager.get("ui.music.lyricsLoading"),
+                (panelX + panelWidth / 2).toFloat(),
+                (panelY + panelHeight / 2).toFloat(),
+                Color.YELLOW.rgb
+            )
+            return
+        }
+
+        // 无歌词提示
+        if (lyrics.isEmpty()) {
+            Fonts.font35.drawCenteredString(
+                LanguageManager.get("ui.music.lyricsNone"),
+                (panelX + panelWidth / 2).toFloat(),
+                (panelY + panelHeight / 2).toFloat(),
+                Color.GRAY.rgb
+            )
+            return
+        }
+
+        // 当前行索引（带时间戳歌词才同步高亮）
+        val currentIdx = Player.currentLyricIndex()
+
+        // 自动滚动：让当前行显示在面板中间
+        if (currentIdx >= 0) {
+            val target = (currentIdx - lyricVisibleLines / 2).coerceAtLeast(0).coerceAtMost((lyrics.size - lyricVisibleLines).coerceAtLeast(0))
+            lyricScroll = target
+        }
+
+        // 裁剪到面板内部
+        GL11.glEnable(GL11.GL_SCISSOR_TEST)
+        val scale = mc.displayHeight.toFloat() / height.toFloat()
+        GL11.glScissor(
+            (panelX * scale).toInt(),
+            (mc.displayHeight - (panelY + panelHeight) * scale).toInt(),
+            (panelWidth * scale).toInt(),
+            (panelHeight * scale).toInt()
+        )
+
+        // 绘制可见歌词行
+        val startY = panelY + 4
+        val textX = panelX + 8
+        val maxTextWidth = panelWidth - 16
+        for (i in 0 until lyricVisibleLines) {
+            val idx = i + lyricScroll
+            if (idx >= lyrics.size) break
+            val line = lyrics[idx]
+            val y = startY + i * lyricLineHeight
+            val isCurrent = (idx == currentIdx)
+            val color = when {
+                isCurrent -> Color(255, 220, 80).rgb
+                idx < currentIdx -> Color(140, 140, 140).rgb
+                else -> Color(220, 220, 220).rgb
+            }
+            val displayText = clipText(line.text, maxTextWidth)
+            // 当前行加阴影
+            if (isCurrent) {
+                Fonts.font35.drawString(displayText, textX + 1, y + 1, Color(0, 0, 0, 180).rgb)
+            }
+            Fonts.font35.drawString(displayText, textX, y, color)
+        }
+
+        GL11.glDisable(GL11.GL_SCISSOR_TEST)
+
+        // 滚动条
+        if (lyrics.size > lyricVisibleLines) {
+            val scrollBarHeight = (lyricVisibleLines.toFloat() / lyrics.size * panelHeight).toInt().coerceAtLeast(10)
+            val scrollBarY = panelY + (lyricScroll.toFloat() / lyrics.size * panelHeight).toInt()
+            RenderUtils.drawRoundedCornerRect(
+                (panelX + panelWidth - 6).toFloat(), scrollBarY.toFloat(),
+                (panelX + panelWidth - 2).toFloat(), (scrollBarY + scrollBarHeight).toFloat(),
+                2f, Color(150, 150, 150).rgb
+            )
+        }
+    }
+
+    /**
+     * 截断文本到指定宽度（超出加省略号）
+     */
+    private fun clipText(text: String, maxWidth: Int): String {
+        if (Fonts.font35.getStringWidth(text) <= maxWidth) return text
+        var end = text.length
+        while (end > 1 && Fonts.font35.getStringWidth(text.substring(0, end) + "...") > maxWidth) {
+            end--
+        }
+        return text.substring(0, end) + "..."
+    }
+
     override fun actionPerformed(button: GuiButton) {
         when (button.id) {
             0 -> mc.displayGuiScreen(prevGui)
@@ -215,10 +339,30 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
     override fun handleMouseInput() {
         super.handleMouseInput()
         val wheel = org.lwjgl.input.Mouse.getEventDWheel()
-        if (wheel != 0) {
+        if (wheel == 0) return
+        val mouseX = org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth
+        val mouseY = height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1
+
+        // 鼠标在搜索列表上：滚动搜索结果
+        val listRight = listX + listWidth
+        if (mouseX in listX..listRight && mouseY in listY..(listY + visibleItems * itemHeight)) {
             val maxScroll = (searchResultsList.size - visibleItems).coerceAtLeast(0)
             scrollOffset = if (wheel > 0) (scrollOffset - 1).coerceAtLeast(0)
             else (scrollOffset + 1).coerceAtMost(maxScroll)
+            return
+        }
+
+        // 鼠标在歌词面板上：滚动歌词
+        val panelX = listX + listWidth + 10
+        val panelWidth = (width - panelX - 10).coerceAtLeast(120)
+        val panelHeight = visibleItems * itemHeight
+        if (mouseX in panelX..(panelX + panelWidth) && mouseY in listY..(listY + panelHeight)) {
+            val lyricsSize = Player.currentLyrics.size
+            val maxLyricScroll = (lyricsSize - lyricVisibleLines).coerceAtLeast(0)
+            // 滚动幅度 3 行，更顺畅
+            val step = 3
+            lyricScroll = if (wheel > 0) (lyricScroll - step).coerceAtLeast(0)
+            else (lyricScroll + step).coerceAtMost(maxLyricScroll)
         }
     }
 
@@ -239,5 +383,6 @@ class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
         Player.onSearchComplete = null
         Player.onTrackChanged = null
         Player.onPlayStateChanged = null
+        Player.onLyricsUpdated = null
     }
 }

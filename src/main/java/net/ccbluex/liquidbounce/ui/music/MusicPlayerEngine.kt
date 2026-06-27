@@ -44,6 +44,11 @@ class MusicPlayerEngine {
     val isPlaying: Boolean get() = playing.get() && !paused.get()
     val isPaused: Boolean get() = paused.get()
 
+    /** 当前播放位置（毫秒），供外部读取用于歌词同步 */
+    val positionMs: Long get() = elapsedMs.get()
+    /** 总时长（毫秒），0 表示未知 */
+    val durationMs: Long get() = totalMs.get()
+
     /** 当前播放 URL，用于 resume 时重新连接 */
     private var currentUrl: String = ""
 

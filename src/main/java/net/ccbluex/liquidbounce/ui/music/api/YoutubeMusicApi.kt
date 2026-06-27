@@ -6,6 +6,7 @@
 package net.ccbluex.liquidbounce.ui.music.api
 
 import com.google.gson.JsonParser
+import net.ccbluex.liquidbounce.ui.music.LyricLine
 import net.ccbluex.liquidbounce.ui.music.MusicSource
 import net.ccbluex.liquidbounce.ui.music.MusicTrack
 import java.io.OutputStream
@@ -34,6 +35,8 @@ object YoutubeMusicApi {
 
     private const val SEARCH_URL = "https://music.youtube.com/youtubei/v1/search?alt=json"
     private const val PLAYER_URL = "https://www.youtube.com/youtubei/v1/player"
+    private const val NEXT_URL = "https://music.youtube.com/youtubei/v1/next?alt=json"
+    private const val BROWSE_URL = "https://music.youtube.com/youtubei/v1/browse?alt=json"
 
     private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0"
     private const val YTM_CLIENT_VERSION = "1.20260627.01.00"
@@ -265,6 +268,78 @@ object YoutubeMusicApi {
             }
             best
         } catch (e: Exception) { null }
+    }
+
+    /**
+     * 获取歌词（纯文本）
+     *
+     * 流程：
+     * 1. 调用 /next?videoId={id} 获取 watch next 面板，提取歌词 tab 的 browseId
+     *    （browsable endpoint 位于 tabs[].tabRenderer.endpoint.browseEndpoint.browseId，
+     *     tab 标题为 "Lyrics"）
+     * 2. 调用 /browse?browseId={browseId} 获取歌词段落，
+     *    文本位于 contents.sectionListRenderer.contents[].musicDescriptionShelfRenderer.description.runs[].text
+     *
+     * 注意：YouTube Music 歌词没有时间戳，转换为 LyricLine 时 timeMs 全部设为 0，
+     *      歌词面板会以纯文本方式展示（不进行高亮同步）。
+     *
+     * @param videoId YouTube 视频 ID
+     * @return 歌词行列表，失败返回空列表
+     */
+    fun getLyrics(videoId: String): List<LyricLine> {
+        return try {
+            val nextBody = """
+                {"videoId":${toJsonString(videoId)},"context":{"client":{"clientName":"WEB_REMIX","clientVersion":"$YTM_CLIENT_VERSION","hl":"zh","gl":"CN"}}}
+            """.trimIndent()
+            val nextResp = postJson(NEXT_URL, nextBody)
+            val nextJson = JsonParser().parse(nextResp).asJsonObject
+
+            // 查找歌词 tab：tabs[].tabRenderer.title == "Lyrics" 且存在 endpoint.browseEndpoint
+            val tabs = nextJson.getAsJsonObject("contents")
+                ?.getAsJsonObject("singleColumnMusicWatchNextResultsRenderer")
+                ?.getAsJsonObject("tabbedRenderer")
+                ?.getAsJsonObject("watchNextTabbedResultsRenderer")
+                ?.getAsJsonArray("tabs") ?: return emptyList()
+            var lyricsBrowseId: String? = null
+            for (tab in tabs) {
+                val tabRenderer = tab.asJsonObject?.getAsJsonObject("tabRenderer") ?: continue
+                val title = tabRenderer.get("title")?.asString ?: continue
+                if (!title.equals("Lyrics", ignoreCase = true)) continue
+                val browseId = tabRenderer.getAsJsonObject("endpoint")
+                    ?.getAsJsonObject("browseEndpoint")
+                    ?.get("browseId")?.asString
+                if (!browseId.isNullOrEmpty()) {
+                    lyricsBrowseId = browseId
+                    break
+                }
+            }
+            if (lyricsBrowseId == null) return emptyList()
+
+            val browseBody = """
+                {"browseId":${toJsonString(lyricsBrowseId)},"context":{"client":{"clientName":"WEB_REMIX","clientVersion":"$YTM_CLIENT_VERSION","hl":"zh","gl":"CN"}}}
+            """.trimIndent()
+            val browseResp = postJson(BROWSE_URL, browseBody)
+            val browseJson = JsonParser().parse(browseResp).asJsonObject
+
+            // 在 sectionListRenderer.contents[] 中查找 musicDescriptionShelfRenderer
+            val contents = browseJson.getAsJsonObject("contents")
+                ?.getAsJsonObject("sectionListRenderer")
+                ?.getAsJsonArray("contents") ?: return emptyList()
+            for (section in contents) {
+                val desc = section.asJsonObject?.getAsJsonObject("musicDescriptionShelfRenderer") ?: continue
+                val runs = desc.getAsJsonObject("description")?.getAsJsonArray("runs") ?: continue
+                val text = runs.joinToString("") { it.asJsonObject.get("text").asString }
+                if (text.isBlank()) continue
+                // 按行拆分，每行作为一个 LyricLine（timeMs=0，无时间同步）
+                return text.lines()
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                    .map { LyricLine(0L, it) }
+            }
+            emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     /**

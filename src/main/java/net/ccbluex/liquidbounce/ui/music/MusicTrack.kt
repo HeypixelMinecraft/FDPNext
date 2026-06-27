@@ -11,7 +11,8 @@ package net.ccbluex.liquidbounce.ui.music
 enum class MusicSource(val displayName: String) {
     NETEASE("网易云音乐"),
     KUGOU("酷狗音乐"),
-    YOUTUBE_MUSIC("YouTube Music")
+    YOUTUBE_MUSIC("YouTube Music"),
+    QISHUI("汽水音乐")
 }
 
 /**

@@ -7,6 +7,7 @@ package net.ccbluex.liquidbounce.ui.music
 
 import net.ccbluex.liquidbounce.ui.music.api.KugouMusicApi
 import net.ccbluex.liquidbounce.ui.music.api.NeteaseMusicApi
+import net.ccbluex.liquidbounce.ui.music.api.QishuiMusicApi
 import net.ccbluex.liquidbounce.ui.music.api.YoutubeMusicApi
 import net.ccbluex.liquidbounce.utils.ClientUtils
 import java.util.concurrent.CopyOnWriteArrayList
@@ -49,6 +50,17 @@ object MusicPlayer {
     var onTrackChanged: ((MusicTrack?) -> Unit)? = null
     var onPlayStateChanged: (() -> Unit)? = null
 
+    /** 当前歌词行列表（按时间升序，空列表表示无歌词） */
+    @Volatile var currentLyrics: List<LyricLine> = emptyList()
+        private set
+
+    /** 是否正在获取歌词 */
+    @Volatile var fetchingLyrics: Boolean = false
+        private set
+
+    /** 歌词获取完成回调 */
+    var onLyricsUpdated: (() -> Unit)? = null
+
     init {
         engine.onFinish = {
             // 播放完毕，自动下一首
@@ -75,6 +87,7 @@ object MusicPlayer {
                     MusicSource.NETEASE -> NeteaseMusicApi.search(keyword)
                     MusicSource.KUGOU -> KugouMusicApi.search(keyword)
                     MusicSource.YOUTUBE_MUSIC -> YoutubeMusicApi.search(keyword)
+                    MusicSource.QISHUI -> QishuiMusicApi.search(keyword)
                 }
                 searchResults.clear()
                 searchResults.addAll(results)
@@ -92,11 +105,13 @@ object MusicPlayer {
      */
     fun playTrack(track: MusicTrack) {
         stop()
-        // 酷狗需要先获取流 URL
+        // 酷狗/汽水/YouTube 需要先获取流 URL
         val streamUrl = when (track.source) {
             MusicSource.KUGOU -> if (track.streamUrl.isEmpty()) KugouMusicApi.getStreamUrl(track.id, "") ?: ""
             else track.streamUrl
             MusicSource.YOUTUBE_MUSIC -> if (track.streamUrl.isEmpty()) YoutubeMusicApi.getStreamUrl(track.id) ?: ""
+            else track.streamUrl
+            MusicSource.QISHUI -> if (track.streamUrl.isEmpty()) QishuiMusicApi.getStreamUrl(track.id) ?: ""
             else track.streamUrl
             else -> track.streamUrl
         }
@@ -105,8 +120,54 @@ object MusicPlayer {
             return
         }
         engine.play(streamUrl)
+        // 异步获取歌词
+        fetchLyrics(track)
         onTrackChanged?.invoke(track)
         onPlayStateChanged?.invoke()
+    }
+
+    /**
+     * 异步获取歌词
+     */
+    fun fetchLyrics(track: MusicTrack) {
+        currentLyrics = emptyList()
+        fetchingLyrics = true
+        onLyricsUpdated?.invoke()
+        Thread {
+            try {
+                val lyrics = when (track.source) {
+                    MusicSource.NETEASE -> NeteaseMusicApi.getLyrics(track.id)
+                    MusicSource.KUGOU -> KugouMusicApi.getLyrics(track.id, track.name, track.duration)
+                    MusicSource.YOUTUBE_MUSIC -> YoutubeMusicApi.getLyrics(track.id)
+                    MusicSource.QISHUI -> QishuiMusicApi.getLyrics(track.id)
+                }
+                currentLyrics = lyrics
+            } catch (e: Exception) {
+                ClientUtils.logWarn("[MusicPlayer] 获取歌词失败: ${e.message}")
+                currentLyrics = emptyList()
+            } finally {
+                fetchingLyrics = false
+                onLyricsUpdated?.invoke()
+            }
+        }.apply { isDaemon = true; name = "FDPNext-MusicLyrics" }.start()
+    }
+
+    /**
+     * 根据当前播放进度计算高亮的歌词行索引
+     *
+     * @return 当前应高亮的歌词行索引，无歌词返回 -1
+     */
+    fun currentLyricIndex(): Int {
+        val lyrics = currentLyrics
+        if (lyrics.isEmpty()) return -1
+        // YouTube Music 等无时间戳歌词（timeMs 全为 0）：不进行同步高亮
+        if (lyrics.all { it.timeMs == 0L }) return -1
+        val pos = engine.positionMs
+        var idx = -1
+        for (i in lyrics.indices) {
+            if (lyrics[i].timeMs <= pos) idx = i else break
+        }
+        return idx
     }
 
     /**
@@ -139,6 +200,8 @@ object MusicPlayer {
                     else track.streamUrl
                     MusicSource.YOUTUBE_MUSIC -> if (track.streamUrl.isEmpty()) YoutubeMusicApi.getStreamUrl(track.id) ?: ""
                     else track.streamUrl
+                    MusicSource.QISHUI -> if (track.streamUrl.isEmpty()) QishuiMusicApi.getStreamUrl(track.id) ?: ""
+                    else track.streamUrl
                     else -> track.streamUrl
                 }
                 engine.resume(url)
@@ -152,6 +215,8 @@ object MusicPlayer {
      */
     fun stop() {
         engine.stop()
+        currentLyrics = emptyList()
+        onLyricsUpdated?.invoke()
         onPlayStateChanged?.invoke()
     }
 
@@ -183,6 +248,8 @@ object MusicPlayer {
         searchResults.clear()
         playlist.clear()
         currentIndex = -1
+        currentLyrics = emptyList()
+        onLyricsUpdated?.invoke()
     }
 
     /**

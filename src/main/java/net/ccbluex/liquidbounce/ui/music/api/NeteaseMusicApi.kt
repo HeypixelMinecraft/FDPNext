@@ -6,6 +6,8 @@
 package net.ccbluex.liquidbounce.ui.music.api
 
 import com.google.gson.JsonParser
+import net.ccbluex.liquidbounce.ui.music.LrcParser
+import net.ccbluex.liquidbounce.ui.music.LyricLine
 import net.ccbluex.liquidbounce.ui.music.MusicSource
 import net.ccbluex.liquidbounce.ui.music.MusicTrack
 import net.ccbluex.liquidbounce.utils.misc.HttpUtils
@@ -81,5 +83,28 @@ object NeteaseMusicApi {
                 externalUrl = "$BASE/song?id=$id"
             )
         } catch (e: Exception) { null }
+    }
+
+    /**
+     * 获取歌词（LRC 格式）
+     *
+     * 接口: /api/song/lyric?os=pc&id={id}&lv=-1&kv=-1&tv=-1
+     * 返回 JSON，lrc.lyric 字段为 LRC 文本
+     *
+     * @param id 网易云歌曲 ID
+     * @return 歌词行列表，失败返回空列表
+     */
+    fun getLyrics(id: String): List<LyricLine> {
+        return try {
+            val url = "$BASE/api/song/lyric?os=pc&id=$id&lv=-1&kv=-1&tv=-1"
+            val resp = HttpUtils.get(url)
+            val json = JsonParser().parse(resp).asJsonObject
+            val lrcText = json.getAsJsonObject("lrc")?.get("lyric")?.asString
+                ?: json.getAsJsonObject("klyric")?.get("lyric")?.asString
+                ?: ""
+            LrcParser.parse(lrcText)
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 }
