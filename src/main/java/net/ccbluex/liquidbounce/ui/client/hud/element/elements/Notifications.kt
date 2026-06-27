@@ -35,8 +35,31 @@ class Notifications(x: Double = 0.0, y: Double = 0.0, scale: Float = 1F,side: Si
     private val contentShadow = BoolValue("ContentShadow", true)
     private val whiteText = BoolValue("WhiteTextColor", true)
     private val modeColored = BoolValue("CustomModeColored", true)
+
+    // LiquidGlass settings
+    private val lgTintR = IntegerValue("LG-TintR", 210, 0, 255).displayable { styleValue.equals("LiquidGlass") }
+    private val lgTintG = IntegerValue("LG-TintG", 225, 0, 255).displayable { styleValue.equals("LiquidGlass") }
+    private val lgTintB = IntegerValue("LG-TintB", 255, 0, 255).displayable { styleValue.equals("LiquidGlass") }
+    private val lgTintStrength = FloatValue("LG-TintStrength", 0.12f, 0f, 1f).displayable { styleValue.equals("LiquidGlass") }
+    private val lgBlurRadius = FloatValue("LG-BlurRadius", 2.0f, 0f, 8f).displayable { styleValue.equals("LiquidGlass") }
+    private val lgRefraction = FloatValue("LG-Refraction", 0.75f, 0f, 5f).displayable { styleValue.equals("LiquidGlass") }
+    private val lgChroma = FloatValue("LG-Chroma", 0.001f, 0f, 0.01f).displayable { styleValue.equals("LiquidGlass") }
+    private val lgDarkness = FloatValue("LG-Darkness", 0.0f, 0f, 1f).displayable { styleValue.equals("LiquidGlass") }
+    private val lgPower = FloatValue("LG-Power", 4.0f, 1f, 10f).displayable { styleValue.equals("LiquidGlass") }
+
     companion object {
-        val styleValue = ListValue("Mode", arrayOf("Classic", "FDP", "Modern", "Tenacity", "Intellij", "Skid"), "Modern")
+        val styleValue = ListValue("Mode", arrayOf("Classic", "FDP", "Modern", "Tenacity", "Intellij", "Skid", "LiquidGlass"), "Modern")
+
+        // LiquidGlass params - updated each frame by drawElement, read by drawNotification
+        var lgTintRVal: Float = 0.82f
+        var lgTintGVal: Float = 0.88f
+        var lgTintBVal: Float = 1.0f
+        var lgTintStrengthVal: Float = 0.12f
+        var lgBlurRadiusVal: Float = 2.0f
+        var lgRefractionVal: Float = 0.75f
+        var lgChromaVal: Float = 0.001f
+        var lgDarknessVal: Float = 0.0f
+        var lgPowerVal: Float = 4.0f
     }
 
     /**
@@ -48,6 +71,20 @@ class Notifications(x: Double = 0.0, y: Double = 0.0, scale: Float = 1F,side: Si
      * Draw element
      */
     override fun drawElement(partialTicks: Float): Border? {
+        // Update LiquidGlass params for this frame
+        if (styleValue.equals("LiquidGlass")) {
+            LiquidGlass.updateBlurTexture()
+            Companion.lgTintRVal = lgTintR.get() / 255f
+            Companion.lgTintGVal = lgTintG.get() / 255f
+            Companion.lgTintBVal = lgTintB.get() / 255f
+            Companion.lgTintStrengthVal = lgTintStrength.get()
+            Companion.lgBlurRadiusVal = lgBlurRadius.get()
+            Companion.lgRefractionVal = lgRefraction.get()
+            Companion.lgChromaVal = lgChroma.get()
+            Companion.lgDarknessVal = lgDarkness.get()
+            Companion.lgPowerVal = lgPower.get()
+        }
+
         // bypass java.util.ConcurrentModificationException
         FDPNext.hud.notifications.map { it }.forEachIndexed { index, notify ->
             GL11.glPushMatrix()
@@ -189,8 +226,32 @@ class Notification(
         val nTypeWarning = if(type.renderColor == Color(0xF5FD00)){ true } else { false }
         val nTypeInfo = if(type.renderColor == Color(0x6490A7)) { true } else { false }
         val nTypeSuccess = if(type.renderColor == Color(0x60E092)) { true } else { false }
-        val nTypeError = if(type.renderColor == Color(0xFF2F2F)) { true } else { false }
+        val nTypeError = if(type.renderColor == Color(0xFF2F2F)){ true } else { false }
 
+
+        if (style.equals("LiquidGlass")) {
+            // Draw liquid glass background
+            LiquidGlass.draw(
+                3f, 0f, width.toFloat() + 5f, 27f - 5f,
+                powerFactor = parent.lgPowerVal,
+                noise = 0.03f,
+                refractionPower = parent.lgRefractionVal,
+                tintR = parent.lgTintRVal,
+                tintG = parent.lgTintGVal,
+                tintB = parent.lgTintBVal,
+                tintStrength = parent.lgTintStrengthVal,
+                chromaStrength = parent.lgChromaVal,
+                darkness = parent.lgDarknessVal,
+                blurRadius = parent.lgBlurRadiusVal,
+                globalAlpha = alpha / 255f
+            )
+            // Progress bar
+            RenderUtils.drawRoundedCornerRect(3f, 0F, max(width - width * ((nowTime - displayTime) / (animeTime * 2F + time)) + 5f, 0F), 27f - 5f, 2f, Color(type.renderColor.red, type.renderColor.green, type.renderColor.blue, 180).rgb)
+            // Text
+            FontLoaders.C12.DisplayFont2(FontLoaders.C12, title, 4F, 3F, textColor, titleShadow)
+            font.DisplayFont2(font, content, 4F, 10F, textColor, contentShadow)
+            return false
+        }
 
         if (style.equals("Modern")) {
 

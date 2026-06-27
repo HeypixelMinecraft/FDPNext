@@ -14,12 +14,14 @@ import net.ccbluex.liquidbounce.ui.client.hud.element.ElementInfo
 import net.ccbluex.liquidbounce.ui.client.hud.element.Side
 import net.ccbluex.liquidbounce.ui.font.Fonts
 import net.ccbluex.liquidbounce.utils.render.ColorUtils
+import net.ccbluex.liquidbounce.utils.render.LiquidGlass
 import net.ccbluex.liquidbounce.utils.render.RenderUtils
 import net.ccbluex.liquidbounce.utils.render.shadowRenderUtils
 import net.ccbluex.liquidbounce.features.value.BoolValue
 import net.ccbluex.liquidbounce.features.value.FloatValue
 import net.ccbluex.liquidbounce.features.value.FontValue
 import net.ccbluex.liquidbounce.features.value.IntegerValue
+import net.ccbluex.liquidbounce.features.value.ListValue
 import net.minecraft.client.gui.FontRenderer
 import net.minecraft.client.renderer.GlStateManager
 import org.lwjgl.input.Keyboard
@@ -52,6 +54,18 @@ class TabGUI(x: Double = 5.0, y: Double = 25.0) : Element(x = x, y = y) {
     private val width = FloatValue("Width", 60F, 55F, 100F)
     private val tabHeight = FloatValue("TabHeight", 12F, 10F, 15F)
     private val upperCaseValue = BoolValue("UpperCase", false)
+    private val backgroundModeValue = ListValue("BackgroundMode", arrayOf("Normal", "LiquidGlass"), "Normal")
+    // LiquidGlass settings - displayed only when BackgroundMode is LiquidGlass
+    private val lgTintR = IntegerValue("LG-TintR", 210, 0, 255).displayable { backgroundModeValue.equals("LiquidGlass") }
+    private val lgTintG = IntegerValue("LG-TintG", 225, 0, 255).displayable { backgroundModeValue.equals("LiquidGlass") }
+    private val lgTintB = IntegerValue("LG-TintB", 255, 0, 255).displayable { backgroundModeValue.equals("LiquidGlass") }
+    private val lgTintStrength = FloatValue("LG-TintStrength", 0.12f, 0f, 1f).displayable { backgroundModeValue.equals("LiquidGlass") }
+    private val lgBlurRadius = FloatValue("LG-BlurRadius", 2.0f, 0f, 8f).displayable { backgroundModeValue.equals("LiquidGlass") }
+    private val lgRefraction = FloatValue("LG-Refraction", 0.75f, 0f, 5f).displayable { backgroundModeValue.equals("LiquidGlass") }
+    private val lgChroma = FloatValue("LG-Chroma", 0.001f, 0f, 0.01f).displayable { backgroundModeValue.equals("LiquidGlass") }
+    private val lgDarkness = FloatValue("LG-Darkness", 0.0f, 0f, 1f).displayable { backgroundModeValue.equals("LiquidGlass") }
+    private val lgPower = FloatValue("LG-Power", 4.0f, 1f, 10f).displayable { backgroundModeValue.equals("LiquidGlass") }
+    private val lgAlpha = FloatValue("LG-Alpha", 1.0f, 0f, 1f).displayable { backgroundModeValue.equals("LiquidGlass") }
     private val tabs = mutableListOf<Tab>()
 
     private var categoryMenu = true
@@ -96,8 +110,26 @@ class TabGUI(x: Double = 5.0, y: Double = 25.0) : Element(x = x, y = y) {
 
         // Draw
         val guiHeight = tabs.size * tabHeight.get()
+        val useLiquidGlass = backgroundModeValue.equals("LiquidGlass")
 
-        if (borderValue.get()) {
+        if (useLiquidGlass) {
+            // Refresh blur texture once per frame for the glass background
+            LiquidGlass.updateBlurTexture()
+            LiquidGlass.draw(
+                1f, 0f, width.get(), guiHeight,
+                powerFactor = lgPower.get(),
+                noise = 0.03f,
+                refractionPower = lgRefraction.get(),
+                tintR = lgTintR.get() / 255f,
+                tintG = lgTintG.get() / 255f,
+                tintB = lgTintB.get() / 255f,
+                tintStrength = lgTintStrength.get(),
+                chromaStrength = lgChroma.get(),
+                darkness = lgDarkness.get(),
+                blurRadius = lgBlurRadius.get(),
+                globalAlpha = lgAlpha.get()
+            )
+        } else if (borderValue.get()) {
             RenderUtils.drawBorderedRect(1F, 0F, width.get(), guiHeight, borderStrength.get(), borderColor.rgb, backgroundColor.rgb)
         } else {
             RenderUtils.drawRect(1F, 0F, width.get(), guiHeight, backgroundColor.rgb)
@@ -297,7 +329,23 @@ class TabGUI(x: Double = 5.0, y: Double = 25.0) : Element(x = x, y = y) {
 
             val menuHeight = modules.size * tabHeight.get()
 
-            if (borderValue.get()) {
+            if (backgroundModeValue.equals("LiquidGlass")) {
+                // Glass background for the expanded module list
+                LiquidGlass.draw(
+                    x - 1F, y - 1F, menuWidth.toFloat() - 1F, menuHeight + 1F,
+                    powerFactor = lgPower.get(),
+                    noise = 0.03f,
+                    refractionPower = lgRefraction.get(),
+                    tintR = lgTintR.get() / 255f,
+                    tintG = lgTintG.get() / 255f,
+                    tintB = lgTintB.get() / 255f,
+                    tintStrength = lgTintStrength.get(),
+                    chromaStrength = lgChroma.get(),
+                    darkness = lgDarkness.get(),
+                    blurRadius = lgBlurRadius.get(),
+                    globalAlpha = lgAlpha.get()
+                )
+            } else if (borderValue.get()) {
                 RenderUtils.drawBorderedRect(x - 1F, y - 1F, x + menuWidth - 2F, y + menuHeight - 1F, borderStrength, borderColor, backgroundColor)
             } else {
                 RenderUtils.drawRect(x - 1F, y - 1F, x + menuWidth - 2F, y + menuHeight - 1F, backgroundColor)
