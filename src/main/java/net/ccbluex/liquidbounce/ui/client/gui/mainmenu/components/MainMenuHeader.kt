@@ -24,23 +24,24 @@ object MainMenuHeader {
             false
         )
 
-        // Version line under the logo
-        val versionLine = "${FDPNext.CLIENT_VERSION}@${FDPNext.CLIENT_COMMIT}"
-        FontLoaders.F16.drawString(
-            versionLine,
-            18f,
-            18f + 42f,
-            Color(156, 163, 175).rgb,
-            false
-        )
-
-        // Website / community link (top-right)
+        // Website link (top-right)
         val website = "https://${FDPNext.CLIENT_WEBSITE}/"
         val wWidth = FontLoaders.F16.getStringWidth(website)
         FontLoaders.F16.drawString(
             website,
             (width - wWidth - 12).toFloat(),
             18f,
+            Color(156, 163, 175).rgb,
+            false
+        )
+
+        // Version + commit (top-right, under the website link — kept clear of the sidebar)
+        val versionLine = "${FDPNext.CLIENT_VERSION}@${FDPNext.CLIENT_COMMIT}"
+        val vWidth = FontLoaders.F16.getStringWidth(versionLine)
+        FontLoaders.F16.drawString(
+            versionLine,
+            (width - vWidth - 12).toFloat(),
+            18f + 16f,
             Color(156, 163, 175).rgb,
             false
         )
