@@ -146,6 +146,9 @@ object FDPNext {
         eventManager.registerListener(macroManager)
         eventManager.registerListener(combatManager)
 
+        // Setup modules first (required before loading configs that reference modules like XRay)
+        moduleManager.registerModules()
+
         // Load configs
         fileManager.loadConfigs(
             fileManager.accountsConfig,
@@ -158,9 +161,6 @@ object FDPNext {
 
         // Load client fonts
         Fonts.loadFonts()
-
-        // Setup modules
-        moduleManager.registerModules()
 
         // Load and enable scripts
         try {
