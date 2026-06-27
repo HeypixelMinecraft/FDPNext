@@ -61,6 +61,7 @@
     "network.MixinC00Handshake",
     "network.MixinNetHandlerPlayClient",
     "network.MixinNetworkManager",
+    "network.MixinNetworkManagerInitChannel",
     "network.MixinC17PacketCustomPayload",
     "network.MixinS3FPacketCustomPayload",
     "network.MixinBlockedServers",

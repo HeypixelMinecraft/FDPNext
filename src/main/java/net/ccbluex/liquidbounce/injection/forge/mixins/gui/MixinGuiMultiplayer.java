@@ -27,6 +27,11 @@ public abstract class MixinGuiMultiplayer extends MixinGuiScreen {
         buttonList.add(toolButton = new GuiButton(997, 5, 8, 138, 20, "Tools"));
         buttonList.add(new GuiButton(998, width - 104, 8, 98, 20, "%ui.serverSpoof%"));
         buttonList.add(new GuiButton(999, width - 208, 8, 98, 20, "Proxy"));
+
+        // Built-in ViaMCP version slider (multi-version selector)
+        if (de.florianmichael.viamcp.ViaMCP.INSTANCE != null && de.florianmichael.viamcp.ViaMCP.INSTANCE.getAsyncVersionSlider() != null) {
+            buttonList.add(de.florianmichael.viamcp.ViaMCP.INSTANCE.getAsyncVersionSlider());
+        }
     }
 
     @Inject(method = "actionPerformed", at = @At("HEAD"))

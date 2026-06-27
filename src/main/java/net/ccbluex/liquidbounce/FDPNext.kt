@@ -130,6 +130,14 @@ object FDPNext {
         combatManager = CombatManager()
         tipSoundManager = TipSoundManager()
 
+        // Initialize built-in ViaMCP (Java multi-version: ViaVersion + ViaBackwards + ViaRewind)
+        try {
+            de.florianmichael.viamcp.ViaMCP.create()
+            de.florianmichael.viamcp.ViaMCP.INSTANCE.initAsyncSlider(148, 8, 110, 20)
+        } catch (t: Throwable) {
+            ClientUtils.logError("Failed to initialize ViaMCP (multi-version)", t)
+        }
+
         // Load language
         LanguageManager.switchLanguage(Minecraft.getMinecraft().gameSettings.language)
 

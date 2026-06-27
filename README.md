@@ -5,6 +5,10 @@
 </div>
 
 
+## 多版本连接（Java + Bedrock）
+内置 ViaMCP，连接其它版本的 Java 服务器只需在多人游戏界面用版本滑块选择即可；Bedrock 走 ViaProxy。详见 [MULTIVERSION.md](MULTIVERSION.md)，游戏内可用 `.via` 查看状态。
+
+
 ## 问题反馈
 发现 Bug 或有新功能想法？点击 [这里](https://github.com/HeypixelMinecraft/FDPNext/issues) 提交 issue 告诉我们。
 
