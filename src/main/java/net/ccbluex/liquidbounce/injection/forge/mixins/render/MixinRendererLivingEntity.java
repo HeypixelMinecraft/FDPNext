@@ -83,8 +83,8 @@ public abstract class MixinRendererLivingEntity extends MixinRender {
 
     @Inject(method = "canRenderName", at = @At("HEAD"), cancellable = true)
     private <T extends EntityLivingBase> void canRenderName(T entity, CallbackInfoReturnable<Boolean> callbackInfoReturnable) {
-
-        if ((FDPNext.moduleManager.getModule(NameTags.class).getState() && EntityUtils.INSTANCE.isSelected(entity, false)))
+        final NameTags nameTags = FDPNext.moduleManager.getModule(NameTags.class);
+        if (nameTags != null && nameTags.getState() && EntityUtils.INSTANCE.isSelected(entity, false))
             callbackInfoReturnable.setReturnValue(false);
     }
 
