@@ -36,7 +36,7 @@ class DynamicIsland : Element() {
 
     private val glassValue = BoolValue("Glass", true)
     private val roundnessValue = FloatValue("Roundness", 1f, 0f, 1f)
-    private val heightValue = FloatValue("Height", 18f, 12f, 30f)
+    private val heightValue = FloatValue("Height", 30f, 12f, 30f)
     private val textColorValue = ColorValue("TextColor", Color(235, 238, 245).rgb)
 
     private val logo = ResourceLocation("FDPNext/misc/logo.png")
@@ -45,10 +45,11 @@ class DynamicIsland : Element() {
     private val gap = 7f
 
     override fun createElement(): Boolean {
-        // Default to roughly top-center; user can drag in the HUD designer.
-        side = Side(Side.Horizontal.MIDDLE, Side.Vertical.UP)
+        // Default placement: horizontally centered, anchored from the vertical middle so it
+        // sits near the top (matches the requested editor defaults). User can drag afterwards.
+        side = Side(Side.Horizontal.MIDDLE, Side.Vertical.MIDDLE)
         x = 85.0
-        y = 4.0
+        y = 248.0
         return true
     }
 
