@@ -24,6 +24,7 @@ class FileManager : MinecraftInstance() {
     val fontsDir = File(dir, "fonts")
     val configsDir = File(dir, "configs")
     val soundsDir = File(dir, "sounds")
+    val musicTempDir = File(dir, "MusicTemp")
     val legacySettingsDir = File(dir, "legacy-settings")
     val capesDir = File(dir, "capes")
     val themesDir = File(dir, "themes")
@@ -62,6 +63,15 @@ class FileManager : MinecraftInstance() {
 
         if (!soundsDir.exists()) {
             soundsDir.mkdir()
+        }
+
+        if (!musicTempDir.exists()) {
+            musicTempDir.mkdir()
+        } else {
+            // 缓存的 mp3 按曲目身份持久化（见 MusicCacheDatabase），跨会话复用；
+            // 仅清理上次下载中断遗留的 .part 半成品
+            musicTempDir.listFiles { _, n -> n.endsWith(".part") }
+                ?.forEach { runCatching { it.delete() } }
         }
 
         if (!capesDir.exists()) {

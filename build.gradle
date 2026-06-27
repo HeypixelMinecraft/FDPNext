@@ -79,6 +79,8 @@ dependencies {
     // MP3 解码库，用于音乐播放器
     include 'javazoom:jlayer:1.0.1'
     include 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    // SQLite，用于记录音乐缓存映射（曲目 -> 本地 mp3）
+    include 'org.xerial:sqlite-jdbc:3.42.0.0'
 
     include fileTree(include: ["*.jar"], dir: "libs")
 }

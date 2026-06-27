@@ -119,7 +119,7 @@ object MusicPlayer {
             ClientUtils.logWarn("[MusicPlayer] 无法获取播放URL: ${track.name}")
             return
         }
-        engine.play(streamUrl)
+        engine.play(streamUrl, track)
         // 异步获取歌词
         fetchLyrics(track)
         onTrackChanged?.invoke(track)
@@ -204,7 +204,7 @@ object MusicPlayer {
                     else track.streamUrl
                     else -> track.streamUrl
                 }
-                engine.resume(url)
+                engine.resume(url, track)
                 onPlayStateChanged?.invoke()
             }
         }
