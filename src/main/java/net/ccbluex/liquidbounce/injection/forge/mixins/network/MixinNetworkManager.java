@@ -49,7 +49,7 @@ public abstract class MixinNetworkManager {
      * Re-order the Via codec around compression so packets still translate after the server
      * enables compression (see ViaMCP setup notes).
      */
-    @Inject(method = "setCompressionThreshold", at = @At("TAIL"))
+    @Inject(method = "setCompressionTreshold", at = @At("TAIL"))
     private void onSetCompressionThreshold(int threshold, CallbackInfo ci) {
         if (channel != null) {
             channel.pipeline().fireUserEventTriggered(new CompressionReorderEvent());
