@@ -115,10 +115,14 @@ class MusicPlayerEngine {
      */
     private fun startProgressTimer() {
         progressThread = Thread({
-            while (playing.get() && !paused.get()) {
-                Thread.sleep(250)
-                elapsedMs.addAndGet(250)
-                onProgress?.invoke(elapsedMs.get(), totalMs.get())
+            try {
+                while (playing.get() && !paused.get()) {
+                    Thread.sleep(250)
+                    elapsedMs.addAndGet(250)
+                    onProgress?.invoke(elapsedMs.get(), totalMs.get())
+                }
+            } catch (_: InterruptedException) {
+                // 暂停/停止时被中断属正常流程，无需上报
             }
         }, "FDPNext-MusicProgress").apply {
             isDaemon = true

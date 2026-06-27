@@ -20,7 +20,7 @@ import java.awt.Color
 /**
  * 音乐播放器 GUI 界面
  */
-class GuiMusicPlayer(private val prevGui: GuiScreen) : GuiScreen() {
+class GuiMusicPlayer(private val prevGui: GuiScreen?) : GuiScreen() {
 
     private lateinit var searchField: GuiTextField
     private val searchResultsList = mutableListOf<MusicTrack>()
