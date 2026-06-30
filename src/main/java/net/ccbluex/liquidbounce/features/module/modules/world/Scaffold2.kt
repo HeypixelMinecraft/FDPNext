@@ -24,7 +24,11 @@ import net.ccbluex.liquidbounce.utils.Rotation
 import net.ccbluex.liquidbounce.utils.RotationUtils
 import net.minecraft.client.settings.GameSettings
 import net.minecraft.init.Blocks
+import net.minecraft.item.ItemBlock
+import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement
 import net.minecraft.util.BlockPos
+import net.minecraft.util.EnumFacing
+import net.minecraft.util.Vec3
 import kotlin.math.roundToInt
 
 class Scaffold2 : Module(name = "Scaffold2", category = ModuleCategory.WORLD, keyBind = 0) {
@@ -76,6 +80,8 @@ class Scaffold2 : Module(name = "Scaffold2", category = ModuleCategory.WORLD, ke
         }
 
         oldPlayerRot = Rotation(mc.thePlayer.rotationYaw, mc.thePlayer.rotationPitch)
+        camYaw = mc.thePlayer.rotationYaw
+        camPitch = mc.thePlayer.rotationPitch
 
         val mode = (modeValue.get() as String).lowercase()
         when (mode) {
@@ -175,6 +181,78 @@ class Scaffold2 : Module(name = "Scaffold2", category = ModuleCategory.WORLD, ke
         }
 
         lockRotation.toPlayer(mc.thePlayer)
+
+        // 放置方块逻辑
+        placeBlock()
+    }
+
+    private fun placeBlock() {
+        val blockPos = BlockPos(mc.thePlayer.posX, mc.thePlayer.posY - 1.0, mc.thePlayer.posZ)
+        val blockState = mc.theWorld.getBlockState(blockPos)
+
+        if (blockState.block === Blocks.air || !blockState.block.isFullBlock) {
+            val itemStack = mc.thePlayer.inventory.getStackInSlot(mc.thePlayer.inventory.currentItem)
+            if (itemStack != null && itemStack.item is ItemBlock) {
+                val itemBlock = itemStack.item as ItemBlock
+                if (itemBlock.block != null && itemBlock.block != Blocks.air) {
+                    // 尝试从下方放置
+                    val belowPos = blockPos.add(0, -1, 0)
+                    val belowState = mc.theWorld.getBlockState(belowPos)
+
+                    if (belowState.block.isFullBlock) {
+                        // 从下方方块的上方放置
+                        val hitVec = Vec3(
+                            blockPos.x + 0.5,
+                            blockPos.y + 1.0,
+                            blockPos.z + 0.5
+                        )
+                        val blockPlacement = C08PacketPlayerBlockPlacement(
+                            belowPos,
+                            EnumFacing.UP.index,
+                            itemStack,
+                            0.5f, 1.0f, 0.5f
+                        )
+                        mc.netHandler.addToSendQueue(blockPlacement)
+
+                        // 挥手
+                        mc.netHandler.addToSendQueue(
+                            net.minecraft.network.play.client.C0APacketAnimation()
+                        )
+                    } else {
+                        // 尝试从侧面放置
+                        val directions = arrayOf(
+                            EnumFacing.NORTH, EnumFacing.SOUTH,
+                            EnumFacing.WEST, EnumFacing.EAST
+                        )
+                        for (face in directions) {
+                            val neighborPos = blockPos.add(face.directionVec)
+                            val neighborState = mc.theWorld.getBlockState(neighborPos)
+                            if (neighborState.block.isFullBlock) {
+                                val oppositeFace = face.opposite
+                                val hitVec = Vec3(
+                                    blockPos.x + 0.5,
+                                    blockPos.y + 0.5,
+                                    blockPos.z + 0.5
+                                )
+                                val blockPlacement = C08PacketPlayerBlockPlacement(
+                                    neighborPos,
+                                    oppositeFace.index,
+                                    itemStack,
+                                    0.5f, 0.5f, 0.5f
+                                )
+                                mc.netHandler.addToSendQueue(blockPlacement)
+
+                                // 挥手
+                                mc.netHandler.addToSendQueue(
+                                    net.minecraft.network.play.client.C0APacketAnimation()
+                                )
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun correctControls(type: Int) {
