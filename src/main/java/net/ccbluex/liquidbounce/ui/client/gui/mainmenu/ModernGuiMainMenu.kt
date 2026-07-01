@@ -5,74 +5,92 @@
  */
 package net.ccbluex.liquidbounce.ui.client.gui.mainmenu
 
-import net.ccbluex.liquidbounce.FDPNext
+import net.ccbluex.liquidbounce.ui.client.altmanager.GuiAltManager
+import net.ccbluex.liquidbounce.ui.client.gui.ClickGUIModule
 import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.components.MainMenuBackground
-import net.ccbluex.liquidbounce.ui.i18n.LanguageManager
-import net.minecraft.client.gui.GuiButton
-import net.minecraft.client.gui.GuiMainMenu
+import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.components.MainMenuContentPanel
+import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.components.MainMenuHeader
+import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.components.MainMenuSidebar
+import net.ccbluex.liquidbounce.utils.render.shader.shaders.AuroraShader
+import net.minecraft.client.gui.GuiLanguage
+import net.minecraft.client.gui.GuiMultiplayer
+import net.minecraft.client.gui.GuiOptions
 import net.minecraft.client.gui.GuiScreen
-import org.lwjgl.opengl.GL11.*
+import net.minecraft.client.gui.GuiSelectWorld
+import net.minecraft.client.gui.GuiYesNoCallback
+import net.minecraftforge.fml.client.GuiModList
+import java.io.IOException
 
-class ModernGuiMainMenu : GuiScreen() {
+/**
+ * Modern dark-themed main menu with sidebar navigation, version info,
+ * account/community cards and an animated particle background.
+ *
+ * Layout:
+ *   +-------------------------------------------------+
+ *   | FDPNext                       v0.1.0-beta@hash   |
+ *   | ------                                          |
+ *   | [SinglePlayer]    +-----------+ +-----------+   |
+ *   | [MultiPlayer ]    | Account   | | Community |   |
+ *   | [AltManager ]    +-----------+ +-----------+   |
+ *   | [Mods       ]                                    |
+ *   | [Options    ]   (animated particle background)   |
+ *   | [Languages  ]                                    |
+ *   | [Quit       ]                                    |
+ *   +-------------------------------------------------+
+ */
+class ModernGuiMainMenu : GuiScreen(), GuiYesNoCallback {
 
-    private val buttons = mutableListOf<MainMenuButton>()
-
-    init {
-        buttons.addAll(listOf(
-            MainMenuButton("singleplayer", "S", "ui.mainmenu.singleplayer") {
-                mc.displayGuiScreen(GuiMainMenu())
-            },
-            MainMenuButton("multiplayer", "M", "ui.mainmenu.multiplayer") {
-                mc.displayGuiScreen(net.minecraft.client.gui.GuiMultiplayer(this))
-            },
-            MainMenuButton("options", "O", "ui.mainmenu.options") {
-                mc.displayGuiScreen(net.minecraft.client.gui.GuiOptions(this, mc.gameSettings))
-            },
-            MainMenuButton("quit", "Q", "ui.mainmenu.quit") {
-                mc.shutdown()
-            }
-        ))
-    }
+    private lateinit var sidebar: MainMenuSidebar
 
     override fun initGui() {
-        val buttonWidth = 200
-        val buttonHeight = 20
-        val startY = height / 2 - 50
-
-        buttonList.clear()
-        buttons.forEachIndexed { index, btn ->
-            buttonList.add(GuiButton(
-                index,
-                width / 2 - buttonWidth / 2,
-                startY + index * 25,
-                buttonWidth,
-                buttonHeight,
-                LanguageManager.get(btn.i18nKey)
-            ))
-        }
+        AuroraShader.resetTime()
+        val buttons = listOf(
+            MainMenuButton("singleplayer", ">", "ui.mainmenu.singleplayer") {
+                mc.displayGuiScreen(GuiSelectWorld(this))
+            },
+            MainMenuButton("multiplayer", ">", "ui.mainmenu.multiplayer") {
+                mc.displayGuiScreen(GuiMultiplayer(this))
+            },
+            MainMenuButton("altmanager", ">", "ui.mainmenu.altmanager") {
+                mc.displayGuiScreen(GuiAltManager(this))
+            },
+            MainMenuButton("mods", ">", "ui.mainmenu.mods") {
+                mc.displayGuiScreen(GuiModList(this))
+            },
+            MainMenuButton("options", ">", "ui.mainmenu.options") {
+                mc.displayGuiScreen(GuiOptions(this, mc.gameSettings))
+            },
+            MainMenuButton("languages", ">", "ui.mainmenu.languages") {
+                mc.displayGuiScreen(GuiLanguage(this, mc.gameSettings, mc.languageManager))
+            },
+            MainMenuButton("quit", ">", "ui.mainmenu.quit") {
+                mc.shutdown()
+            }
+        )
+        sidebar = MainMenuSidebar(buttons, { accentColor() }, { /* selection callback */ })
+        super.initGui()
     }
 
+    private fun accentColor(): Int =
+        try { ClickGUIModule.generateColor().rgb } catch (_: Throwable) { 0xFF6B9D.toInt() }
+
     override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
-        // Draw background
         MainMenuBackground.draw(mouseX, mouseY, width, height)
+        MainMenuHeader.draw(width)
 
-        // Draw title
-        val title = "FDPNext"
-        val titleWidth = mc.fontRendererObj.getStringWidth(title)
-        mc.fontRendererObj.drawStringWithShadow(
-            title,
-            (width - titleWidth) / 2f,
-            height / 4f,
-            0xFFFFFF
-        )
+        sidebar.draw(mouseX, mouseY)
 
-        // Draw buttons
+        // Content panel to the right of the sidebar
+        val contentX = 12f + 100f + 24f // sidebar x + width + gap
+        val contentY = 60f
+        MainMenuContentPanel.draw(contentX, contentY)
+
         super.drawScreen(mouseX, mouseY, partialTicks)
     }
 
-    override fun actionPerformed(button: GuiButton) {
-        if (button.id < buttons.size) {
-            buttons[button.id].action.invoke()
-        }
+    @Throws(IOException::class)
+    override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
+        sidebar.mouseClicked(mouseX, mouseY, mouseButton)
+        super.mouseClicked(mouseX, mouseY, mouseButton)
     }
 }

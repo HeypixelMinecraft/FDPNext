@@ -18,6 +18,7 @@ class VulcanFlight : FlyMode("Vulcan") {
 
     override fun onEnable() {
         ticks = 0
+        // 发送位置包，Y轴-2，用于绕过 Vulcan 检测
         mc.netHandler.addToSendQueue(C03PacketPlayer.C06PacketPlayerPosLook(
             mc.thePlayer.posX,
             mc.thePlayer.posY - 2,
@@ -29,29 +30,35 @@ class VulcanFlight : FlyMode("Vulcan") {
     }
 
     override fun onDisable() {
+        // 停止移动
         MovementUtils.resetMotion(true)
     }
 
+    @EventTarget
     override fun onMotion(event: MotionEvent) {
         if (!event.isPre()) return
 
         val speed = 1f
 
+        // 设置垂直运动
         mc.thePlayer.motionY = -1E-10 +
             (if (mc.gameSettings.keyBindJump.isKeyDown) speed.toDouble() else 0.0) -
             (if (mc.gameSettings.keyBindSneak.isKeyDown) speed.toDouble() else 0.0)
 
-        // 简化逻辑：直接进行 tick 计数，不需要 cancel event
+        // 增加 tick 计数
         ticks++
         if (ticks >= 8) {
+            // 达到最大 tick 数，停止飞行
             MovementUtils.resetMotion(true)
             fly.state = false
         }
     }
 
+    @EventTarget
     override fun onMove(event: MoveEvent) {
         val speed = 1f
+        // 设置水平移动速度
         MovementUtils.strafe(speed)
-        event.y = 0.0
+        event.zeroXZ()
     }
 }
