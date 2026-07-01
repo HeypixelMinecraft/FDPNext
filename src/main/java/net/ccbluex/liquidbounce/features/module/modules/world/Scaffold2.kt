@@ -20,6 +20,7 @@ import net.ccbluex.liquidbounce.features.module.ModuleCategory
 import net.ccbluex.liquidbounce.features.value.BoolValue
 import net.ccbluex.liquidbounce.features.value.ListValue
 import net.ccbluex.liquidbounce.utils.InventoryUtils
+import net.ccbluex.liquidbounce.utils.MovementUtils
 import net.ccbluex.liquidbounce.utils.Rotation
 import net.ccbluex.liquidbounce.utils.RotationUtils
 import net.minecraft.client.settings.GameSettings
@@ -50,9 +51,13 @@ class Scaffold2 : Module(name = "Scaffold2", category = ModuleCategory.WORLD, ke
     private var left = false
     private var right = false
     private var breezily = false
+    private var lastPlacePos: BlockPos? = null
+    private var placeDelay = 0
 
     override fun onEnable() {
         prevSlot = mc.thePlayer.inventory.currentItem
+        lastPlacePos = null
+        placeDelay = 0
     }
 
     override fun onDisable() {
@@ -182,75 +187,145 @@ class Scaffold2 : Module(name = "Scaffold2", category = ModuleCategory.WORLD, ke
 
         lockRotation.toPlayer(mc.thePlayer)
 
-        // 放置方块逻辑
-        placeBlock()
+        if (placeDelay > 0) {
+            placeDelay--
+        } else {
+            placeBlock()
+        }
     }
 
     private fun placeBlock() {
-        val blockPos = BlockPos(mc.thePlayer.posX, mc.thePlayer.posY - 1.0, mc.thePlayer.posZ)
-        val blockState = mc.theWorld.getBlockState(blockPos)
+        val blockSlot = InventoryUtils.findAutoBlockBlock()
+        if (blockSlot == -1) return
 
-        if (blockState.block === Blocks.air || !blockState.block.isFullBlock) {
-            val itemStack = mc.thePlayer.inventory.getStackInSlot(mc.thePlayer.inventory.currentItem)
-            if (itemStack != null && itemStack.item is ItemBlock) {
-                val itemBlock = itemStack.item as ItemBlock
-                if (itemBlock.block != null && itemBlock.block != Blocks.air) {
-                    // 尝试从下方放置
-                    val belowPos = blockPos.add(0, -1, 0)
-                    val belowState = mc.theWorld.getBlockState(belowPos)
+        val itemStack = mc.thePlayer.inventory.getStackInSlot(blockSlot - 36)
+        if (itemStack == null || itemStack.item !is ItemBlock) return
 
-                    if (belowState.block.isFullBlock) {
-                        // 从下方方块的上方放置
-                        val hitVec = Vec3(
-                            blockPos.x + 0.5,
-                            blockPos.y + 1.0,
-                            blockPos.z + 0.5
-                        )
-                        val blockPlacement = C08PacketPlayerBlockPlacement(
-                            belowPos,
-                            EnumFacing.UP.index,
-                            itemStack,
-                            0.5f, 1.0f, 0.5f
-                        )
-                        mc.netHandler.addToSendQueue(blockPlacement)
+        val itemBlock = itemStack.item as ItemBlock
+        if (itemBlock.block == null || itemBlock.block == Blocks.air) return
 
-                        // 挥手
-                        mc.netHandler.addToSendQueue(
-                            net.minecraft.network.play.client.C0APacketAnimation()
-                        )
-                    } else {
-                        // 尝试从侧面放置
-                        val directions = arrayOf(
-                            EnumFacing.NORTH, EnumFacing.SOUTH,
-                            EnumFacing.WEST, EnumFacing.EAST
-                        )
-                        for (face in directions) {
-                            val neighborPos = blockPos.add(face.directionVec)
-                            val neighborState = mc.theWorld.getBlockState(neighborPos)
-                            if (neighborState.block.isFullBlock) {
-                                val oppositeFace = face.opposite
-                                val hitVec = Vec3(
-                                    blockPos.x + 0.5,
-                                    blockPos.y + 0.5,
-                                    blockPos.z + 0.5
-                                )
-                                val blockPlacement = C08PacketPlayerBlockPlacement(
-                                    neighborPos,
-                                    oppositeFace.index,
-                                    itemStack,
-                                    0.5f, 0.5f, 0.5f
-                                )
-                                mc.netHandler.addToSendQueue(blockPlacement)
+        val targetPos = findTargetBlock()
+        if (targetPos == null) {
+            val backupPos = findBackupBlock()
+            if (backupPos == null) return
+            placeAt(backupPos, itemStack)
+        } else {
+            placeAt(targetPos, itemStack)
+        }
+    }
 
-                                // 挥手
-                                mc.netHandler.addToSendQueue(
-                                    net.minecraft.network.play.client.C0APacketAnimation()
-                                )
-                                break
-                            }
-                        }
-                    }
+    private fun findTargetBlock(): BlockPos? {
+        val yaw = lockRotation.yaw
+        val pitch = lockRotation.pitch
+
+        if (pitch > 50) {
+            val blockBelow = BlockPos(mc.thePlayer.posX, mc.thePlayer.posY - 1.0, mc.thePlayer.posZ)
+            if (isAir(blockBelow)) {
+                return blockBelow
+            }
+        }
+
+        val range = 2.5
+        val x = mc.thePlayer.posX + Math.sin(Math.toRadians(yaw.toDouble())) * range
+        val z = mc.thePlayer.posZ + Math.cos(Math.toRadians(yaw.toDouble())) * range
+
+        for (dx in -1..1) {
+            for (dz in -1..1) {
+                val checkPos = BlockPos(x + dx, mc.thePlayer.posY - 1.0, z + dz)
+                if (isAir(checkPos) && hasSupport(checkPos)) {
+                    return checkPos
                 }
+            }
+        }
+
+        return null
+    }
+
+    private fun findBackupBlock(): BlockPos? {
+        val pos = BlockPos(mc.thePlayer.posX, mc.thePlayer.posY - 1.0, mc.thePlayer.posZ)
+        if (isAir(pos) && hasSupport(pos)) {
+            return pos
+        }
+
+        val directions = arrayOf(
+            EnumFacing.NORTH, EnumFacing.SOUTH, EnumFacing.WEST, EnumFacing.EAST
+        )
+
+        for (face in directions) {
+            val checkPos = pos.add(face.directionVec)
+            if (isAir(checkPos) && hasSupport(checkPos)) {
+                return checkPos
+            }
+        }
+
+        return null
+    }
+
+    private fun isAir(pos: BlockPos): Boolean {
+        val state = mc.theWorld.getBlockState(pos)
+        return state.block === Blocks.air || !state.block.isFullBlock
+    }
+
+    private fun hasSupport(pos: BlockPos): Boolean {
+        val below = mc.theWorld.getBlockState(pos.add(0, -1, 0)).block
+        if (below.isFullBlock) return true
+
+        val directions = arrayOf(
+            EnumFacing.NORTH, EnumFacing.SOUTH, EnumFacing.WEST, EnumFacing.EAST
+        )
+        for (face in directions) {
+            val neighbor = mc.theWorld.getBlockState(pos.add(face.directionVec)).block
+            if (neighbor.isFullBlock) return true
+        }
+
+        return false
+    }
+
+    private fun placeAt(pos: BlockPos, itemStack: net.minecraft.item.ItemStack) {
+        if (lastPlacePos != null && pos == lastPlacePos) {
+            return
+        }
+
+        val belowPos = pos.add(0, -1, 0)
+        val belowState = mc.theWorld.getBlockState(belowPos)
+
+        if (belowState.block.isFullBlock) {
+            val blockPlacement = C08PacketPlayerBlockPlacement(
+                belowPos,
+                EnumFacing.UP.index,
+                itemStack,
+                0.5f, 1.0f, 0.5f
+            )
+            mc.netHandler.addToSendQueue(blockPlacement)
+            mc.netHandler.addToSendQueue(
+                net.minecraft.network.play.client.C0APacketAnimation()
+            )
+            lastPlacePos = pos
+            placeDelay = 1
+            return
+        }
+
+        val directions = arrayOf(
+            EnumFacing.NORTH, EnumFacing.SOUTH, EnumFacing.WEST, EnumFacing.EAST
+        )
+        for (face in directions) {
+            val neighborPos = pos.add(face.directionVec)
+            val neighborState = mc.theWorld.getBlockState(neighborPos)
+            if (neighborState.block.isFullBlock) {
+                val oppositeFace = face.opposite
+                val blockPlacement = C08PacketPlayerBlockPlacement(
+                    neighborPos,
+                    oppositeFace.index,
+                    itemStack,
+                    0.5f, 0.5f, 0.5f
+                )
+                mc.netHandler.addToSendQueue(blockPlacement)
+                mc.netHandler.addToSendQueue(
+                    net.minecraft.network.play.client.C0APacketAnimation()
+                )
+                lastPlacePos = pos
+                placeDelay = 1
+                return
             }
         }
     }

@@ -711,6 +711,10 @@ public final class RenderUtils extends MinecraftInstance {
         drawTexturedRect(x, y + height, width, 9, "panelbottom");
     }
 
+    public static void drawTexturedRect(float x, float y, float width, float height) {
+        drawModalRectWithCustomSizedTexture(x, y, 0, 0, width, height, width, height);
+    }
+
     public static void drawTexturedRect(float x, float y, float width, float height, String image) {
         glPushMatrix();
         final boolean enableBlend = glIsEnabled(GL_BLEND);

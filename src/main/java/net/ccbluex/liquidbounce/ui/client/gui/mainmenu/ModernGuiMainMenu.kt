@@ -39,7 +39,6 @@ import java.io.IOException
  *   +-------------------------------------------------+
  */
 class ModernGuiMainMenu : GuiScreen(), GuiYesNoCallback {
-
     private lateinit var sidebar: MainMenuSidebar
 
     override fun initGui() {
@@ -77,14 +76,11 @@ class ModernGuiMainMenu : GuiScreen(), GuiYesNoCallback {
     override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
         MainMenuBackground.draw(mouseX, mouseY, width, height)
         MainMenuHeader.draw(width)
-
         sidebar.draw(mouseX, mouseY)
-
         // Content panel to the right of the sidebar
         val contentX = 12f + 100f + 24f // sidebar x + width + gap
         val contentY = 60f
         MainMenuContentPanel.draw(contentX, contentY)
-
         super.drawScreen(mouseX, mouseY, partialTicks)
     }
 
