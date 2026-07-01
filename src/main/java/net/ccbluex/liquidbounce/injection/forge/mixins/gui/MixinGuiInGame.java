@@ -56,6 +56,7 @@ public abstract class MixinGuiInGame extends MixinGui {
 
     /**
      * @author liulihaocai
+     * @reason Custom HUD tooltip rendering
      */
     @Overwrite
     protected void renderTooltip(ScaledResolution sr, float partialTicks) {

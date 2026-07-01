@@ -15,6 +15,7 @@ public abstract class MixinGuiKeyBindingList extends GuiSlot {
 
     /**
      * @author CCBlueX
+     * @reason Adjust scrollbar position
      */
     @Overwrite
     protected int getScrollBarX() {
