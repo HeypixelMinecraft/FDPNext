@@ -77,7 +77,7 @@ object HypixelServerDetector {
     }
 
     private fun getSidebarLines(scoreboard: Scoreboard, objective: ScoreObjective): List<String> {
-        val scores = scoreboard.scoresOnScoreboard
+        val scores = scoreboard.getSortedScores(objective)
             .filter { it: Score -> it.objective == objective }
             .sortedBy { it: Score -> it.scorePoints }
 
