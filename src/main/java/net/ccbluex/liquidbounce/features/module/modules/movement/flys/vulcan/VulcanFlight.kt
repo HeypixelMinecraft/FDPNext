@@ -32,34 +32,26 @@ class VulcanFlight : FlyMode("Vulcan") {
         MovementUtils.resetMotion(true)
     }
 
-    @EventTarget
-    fun onMotion(event: MotionEvent) {
+    override fun onMotion(event: MotionEvent) {
+        if (!event.isPre()) return
+
         val speed = 1f
 
         mc.thePlayer.motionY = -1E-10 +
             (if (mc.gameSettings.keyBindJump.isKeyDown) speed.toDouble() else 0.0) -
             (if (mc.gameSettings.keyBindSneak.isKeyDown) speed.toDouble() else 0.0)
 
-        if (mc.thePlayer.getDistance(
-                mc.thePlayer.lastReportedPosX,
-                mc.thePlayer.lastReportedPosY,
-                mc.thePlayer.lastReportedPosZ
-            ) <= 10 - speed - 0.15
-        ) {
-            event.cancelEvent()
-        } else {
-            ticks++
-            if (ticks >= 8) {
-                MovementUtils.resetMotion(true)
-                fly.state = false
-            }
+        // 简化逻辑：直接进行 tick 计数，不需要 cancel event
+        ticks++
+        if (ticks >= 8) {
+            MovementUtils.resetMotion(true)
+            fly.state = false
         }
     }
 
-    @EventTarget
-    fun onMove(event: MoveEvent) {
+    override fun onMove(event: MoveEvent) {
         val speed = 1f
         MovementUtils.strafe(speed)
-        event.zeroY()
+        event.y = 0.0
     }
 }
