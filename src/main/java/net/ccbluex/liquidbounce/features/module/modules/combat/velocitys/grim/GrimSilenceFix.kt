@@ -11,6 +11,7 @@ import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura
 import net.ccbluex.liquidbounce.features.module.modules.combat.velocitys.VelocityMode
 import net.ccbluex.liquidbounce.features.value.BoolValue
+import net.ccbluex.liquidbounce.features.value.FloatValue
 import net.ccbluex.liquidbounce.features.value.IntegerValue
 import net.ccbluex.liquidbounce.utils.extensions.getDistanceToEntityBox
 import net.minecraft.entity.EntityLivingBase
@@ -30,6 +31,7 @@ class GrimSilenceFix : VelocityMode("GrimSilenceFix") {
     private var velocityReceived = false
     private var target: EntityLivingBase? = null
     private var needRestoreSprint = false
+    private var savedVelocityPacket: S12PacketEntityVelocity? = null
 
     private val attackCountValue = IntegerValue("${valuePrefix}AttackCount", 6, 1, 15)
     private val horizontalValue = BoolValue("${valuePrefix}Horizontal", true)
@@ -52,6 +54,7 @@ class GrimSilenceFix : VelocityMode("GrimSilenceFix") {
         if (player.getDistanceToEntityBox(auraTarget) > 3.5) return
 
         target = auraTarget
+        savedVelocityPacket = packet
         velocityReceived = true
         event.cancelEvent()
     }
@@ -88,7 +91,7 @@ class GrimSilenceFix : VelocityMode("GrimSilenceFix") {
         player.isSprinting = true
 
         // Apply reduced velocity
-        val packet = velocity.velocityPacket
+        val packet = savedVelocityPacket
         if (packet != null) {
             val motionX = (packet.motionX / 8000.0) * if (horizontalValue.get()) horizontalFactorValue.get().toDouble() else 1.0
             val motionY = (packet.motionY / 8000.0) * if (verticalValue.get()) horizontalFactorValue.get().toDouble() else 1.0
@@ -96,6 +99,7 @@ class GrimSilenceFix : VelocityMode("GrimSilenceFix") {
             player.motionX = motionX
             player.motionY = motionY
             player.motionZ = motionZ
+            savedVelocityPacket = null
         }
 
         // Restore sprint state if it was changed

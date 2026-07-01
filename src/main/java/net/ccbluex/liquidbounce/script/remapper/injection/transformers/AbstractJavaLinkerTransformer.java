@@ -34,12 +34,12 @@ public class AbstractJavaLinkerTransformer implements IClassTransformer {
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
         if(name.equals("jdk.internal.dynalink.beans.AbstractJavaLinker")) {
             try {
-                final ClassNode classNode = ASMUtils.INSTANCE.toClassNode(basicClass);
+                final ClassNode classNode = ASMUtils.toClassNode(basicClass);
 
                 classNode.methods.forEach(methodNode -> {
                     switch(methodNode.name + methodNode.desc) {
                         case "addMember(Ljava/lang/String;Ljava/lang/reflect/AccessibleObject;Ljava/util/Map;)V":
-                            methodNode.instructions.insertBefore(methodNode.instructions.getFirst(), ASMUtils.INSTANCE.toNodes(
+                            methodNode.instructions.insertBefore(methodNode.instructions.getFirst(), ASMUtils.toNodes(
                                     new VarInsnNode(ALOAD, 0),
                                     new FieldInsnNode(GETFIELD, "jdk/internal/dynalink/beans/AbstractJavaLinker", "clazz", "Ljava/lang/Class;"),
                                     new VarInsnNode(ALOAD, 1),
@@ -49,7 +49,7 @@ public class AbstractJavaLinkerTransformer implements IClassTransformer {
                             ));
                             break;
                         case "addMember(Ljava/lang/String;Ljdk/internal/dynalink/beans/SingleDynamicMethod;Ljava/util/Map;)V":
-                            methodNode.instructions.insertBefore(methodNode.instructions.getFirst(), ASMUtils.INSTANCE.toNodes(
+                            methodNode.instructions.insertBefore(methodNode.instructions.getFirst(), ASMUtils.toNodes(
                                     new VarInsnNode(ALOAD, 0),
                                     new FieldInsnNode(GETFIELD, "jdk/internal/dynalink/beans/AbstractJavaLinker", "clazz", "Ljava/lang/Class;"),
                                     new VarInsnNode(ALOAD, 1),
@@ -58,7 +58,7 @@ public class AbstractJavaLinkerTransformer implements IClassTransformer {
                             ));
                             break;
                         case "setPropertyGetter(Ljava/lang/String;Ljdk/internal/dynalink/beans/SingleDynamicMethod;Ljdk/internal/dynalink/beans/GuardedInvocationComponent$ValidationType;)V":
-                            methodNode.instructions.insertBefore(methodNode.instructions.getFirst(), ASMUtils.INSTANCE.toNodes(
+                            methodNode.instructions.insertBefore(methodNode.instructions.getFirst(), ASMUtils.toNodes(
                                     new VarInsnNode(ALOAD, 0),
                                     new FieldInsnNode(GETFIELD, "jdk/internal/dynalink/beans/AbstractJavaLinker", "clazz", "Ljava/lang/Class;"),
                                     new VarInsnNode(ALOAD, 1),
@@ -69,7 +69,7 @@ public class AbstractJavaLinkerTransformer implements IClassTransformer {
                     }
                 });
 
-                return ASMUtils.INSTANCE.toBytes(classNode);
+                return ASMUtils.toBytes(classNode);
             }catch(final Throwable throwable) {
                 throwable.printStackTrace();
             }

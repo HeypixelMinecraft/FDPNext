@@ -36,7 +36,7 @@ public class OptimizeTransformer implements IClassTransformer {
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
         if(transformedName.startsWith("net.minecraft") && basicClass != null && !transformMap.containsKey(transformedName)) {
             try {
-                final ClassNode classNode = ASMUtils.INSTANCE.toClassNode(basicClass);
+                final ClassNode classNode = ASMUtils.toClassNode(basicClass);
                 AtomicBoolean changed = new AtomicBoolean(false);
 
                 classNode.methods.forEach(methodNode -> {
@@ -57,7 +57,7 @@ public class OptimizeTransformer implements IClassTransformer {
                 });
 
                 if (changed.get()) {
-                    return ASMUtils.INSTANCE.toBytes(classNode);
+                    return ASMUtils.toBytes(classNode);
                 }
             }catch(final Throwable throwable) {
                 throwable.printStackTrace();

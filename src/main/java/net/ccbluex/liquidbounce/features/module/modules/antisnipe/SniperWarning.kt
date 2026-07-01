@@ -72,7 +72,9 @@ object SniperWarning : Module(name = "SniperWarning", category = ModuleCategory.
         for (armor in player.inventory.armorInventory) {
             if (armor != null && armor.item is net.minecraft.item.ItemArmor) {
                 val itemArmor = armor.item as net.minecraft.item.ItemArmor
-                if (itemArmor.material == net.minecraft.item.ItemArmor.ArmorMaterial.CHAIN) {
+                // 通过 unlocalizedName 判断是否为锁链护甲
+                val armorName = itemArmor.unlocalizedName
+                if (armorName.contains("chain", ignoreCase = true)) {
                     hasChain = true
                     break
                 }
@@ -83,7 +85,9 @@ object SniperWarning : Module(name = "SniperWarning", category = ModuleCategory.
         val heldItem = player.heldItem
         if (heldItem != null && heldItem.item is net.minecraft.item.ItemSword) {
             val sword = heldItem.item as net.minecraft.item.ItemSword
-            if (sword.toolMaterialName.equals("IRON", ignoreCase = true)) {
+            // 通过 unlocalizedName 判断是否为铁剑
+            val swordName = sword.unlocalizedName
+            if (swordName.contains("iron", ignoreCase = true)) {
                 hasIronSword = true
             }
         }

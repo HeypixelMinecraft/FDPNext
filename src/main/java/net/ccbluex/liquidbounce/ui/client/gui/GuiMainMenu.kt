@@ -5,14 +5,14 @@
  */
 package net.ccbluex.liquidbounce.ui.client.gui
 
-import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.SigmaGuiMainMenu
+import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.ModernGuiMainMenu
 import net.minecraft.client.gui.GuiScreen
 import net.minecraft.client.gui.GuiYesNoCallback
 
 
 class GuiMainMenu : GuiScreen(), GuiYesNoCallback {
     override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
-        mc.displayGuiScreen(SigmaGuiMainMenu())
+        mc.displayGuiScreen(ModernGuiMainMenu())
     }
 
 }
