@@ -6,7 +6,7 @@ import net.ccbluex.liquidbounce.ui.client.gui.LaunchFilterInfo
 import net.ccbluex.liquidbounce.ui.client.gui.LaunchOption
 import net.ccbluex.liquidbounce.ui.client.gui.ClickGUIModule
 import net.ccbluex.liquidbounce.ui.client.gui.ClickGuiConfig
-import net.ccbluex.liquidbounce.ui.client.gui.GuiMainMenu
+import net.ccbluex.liquidbounce.ui.client.gui.mainmenu.ModernGuiMainMenu
 import net.ccbluex.liquidbounce.ui.client.gui.clickgui.ClickGui
 import java.io.File
 
@@ -20,7 +20,7 @@ object modernuiLaunchOption : LaunchOption() {
     lateinit var clickGuiConfig: ClickGuiConfig
 
     override fun start() {
-        FDPNext.mainMenu = GuiMainMenu()
+        FDPNext.mainMenu = ModernGuiMainMenu()
         FDPNext.moduleManager.registerModule(ClickGUIModule)
 
         clickGui = ClickGui()

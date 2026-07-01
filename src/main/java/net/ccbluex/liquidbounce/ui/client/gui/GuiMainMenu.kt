@@ -11,8 +11,17 @@ import net.minecraft.client.gui.GuiYesNoCallback
 
 
 class GuiMainMenu : GuiScreen(), GuiYesNoCallback {
-    override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
-        mc.displayGuiScreen(ModernGuiMainMenu())
+    private var redirected = false
+
+    override fun initGui() {
+        redirected = false
+        super.initGui()
     }
 
+    override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
+        if (!redirected) {
+            redirected = true
+            mc.displayGuiScreen(ModernGuiMainMenu())
+        }
+    }
 }

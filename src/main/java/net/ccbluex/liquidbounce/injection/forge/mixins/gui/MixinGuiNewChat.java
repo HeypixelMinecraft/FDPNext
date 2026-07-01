@@ -84,6 +84,10 @@ public abstract class MixinGuiNewChat {
      */
     @Overwrite
     public void printChatMessage(IChatComponent chatComponent) {
+        if (HypixelOverlay.shouldHideTipMessage(chatComponent.getUnformattedText())) {
+            return;
+        }
+
         if(!chatEnhance.getState() || !chatEnhance.getChatCombineValue().get()) {
             printChatMessageWithOptionalDeletion(chatComponent, 0);
         } else if(chatEnhance.getChatCombineValue().get()) {
