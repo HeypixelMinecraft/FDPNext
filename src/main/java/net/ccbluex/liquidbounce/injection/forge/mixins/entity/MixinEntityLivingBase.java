@@ -5,6 +5,9 @@
  */
 package net.ccbluex.liquidbounce.injection.forge.mixins.entity;
 
+import baritone.api.BaritoneAPI;
+import baritone.api.IBaritone;
+import baritone.api.event.events.RotationMoveEvent;
 import net.ccbluex.liquidbounce.FDPNext;
 import net.ccbluex.liquidbounce.event.JumpEvent;
 import net.ccbluex.liquidbounce.features.module.modules.client.Animations;
@@ -76,6 +79,7 @@ public abstract class MixinEntityLivingBase extends MixinEntity {
      * @author CoDynamic
      * Modified by Co Dynamic
      * Date: 2023/02/15
+     * @reason Mixin overwrite
      */
     @Overwrite
     protected void jump() {
@@ -107,6 +111,14 @@ public abstract class MixinEntityLivingBase extends MixinEntity {
             if(sprint.getState() && sprint.getJumpDirectionsValue().get()) {
                 fixedYaw += MovementUtils.INSTANCE.getMovingYaw() - this.rotationYaw;
             }
+
+            final IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer((EntityPlayerSP) (Object) this);
+            if (baritone != null) {
+                final RotationMoveEvent rotationMoveEvent = new RotationMoveEvent(RotationMoveEvent.Type.JUMP, fixedYaw, this.rotationPitch);
+                baritone.getGameEventHandler().onPlayerRotationMove(rotationMoveEvent);
+                fixedYaw = rotationMoveEvent.getYaw();
+            }
+
             this.motionX -= MathHelper.sin(fixedYaw / 180F * 3.1415927F) * 0.2F;
             this.motionZ += MathHelper.cos(fixedYaw / 180F * 3.1415927F) * 0.2F;
         }
@@ -153,6 +165,7 @@ public abstract class MixinEntityLivingBase extends MixinEntity {
 
     /**
      * @author Liuli
+     * @reason Mixin overwrite
      */
     @Overwrite
     private int getArmSwingAnimationEnd() {
