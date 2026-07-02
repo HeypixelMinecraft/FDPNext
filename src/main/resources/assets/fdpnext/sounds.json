@@ -1,5 +1,5 @@
 {
-  "fdpnext.kill.zako": {
+  "kill.zako": {
     "category": "master",
     "sounds": [
       {
@@ -7,7 +7,7 @@
       }
     ]
   },
-  "fdpnext.kill.zhangxuefeng": {
+  "kill.zhangxuefeng": {
     "category": "master",
     "sounds": [
       {
@@ -15,7 +15,7 @@
       }
     ]
   },
-  "fdpnext.kill.fahhhh": {
+  "kill.fahhhh": {
     "category": "master",
     "sounds": [
       {

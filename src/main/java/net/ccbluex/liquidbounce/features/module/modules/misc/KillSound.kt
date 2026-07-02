@@ -75,11 +75,11 @@ object KillSound : Module(
     private fun playKillSound() {
         try {
             val soundEvent = when (soundMode.get()) {
-                "Zako" -> "fdpnext.kill.zako"
-                "ZhangXueFeng" -> "fdpnext.kill.zhangxuefeng"
-                "FAHHHH" -> "fdpnext.kill.fahhhh"
-                "Custom" -> "fdpnext.kill.zako"
-                else -> "fdpnext.kill.zako"
+                "Zako" -> "fdpnext:kill.zako"
+                "ZhangXueFeng" -> "fdpnext:kill.zhangxuefeng"
+                "FAHHHH" -> "fdpnext:kill.fahhhh"
+                "Custom" -> "fdpnext:kill.zako"
+                else -> "fdpnext:kill.zako"
             }
 
             mc.soundHandler.playSound(PositionedSoundRecord.create(ResourceLocation(soundEvent), 1.0F))
