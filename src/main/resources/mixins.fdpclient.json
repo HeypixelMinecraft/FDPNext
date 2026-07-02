@@ -107,6 +107,7 @@
     "patcher.bugfixes.MixinScoreboard",
     "patcher.bugfixes.MixinServerAddress",
     "patcher.bugfixes.MixinServerList",
+    "patcher.bugfixes.MixinSoundHandler",
     "patcher.bugfixes.MixinSoundManager",
     "patcher.performance.MixinAnvilChunkLoader",
     "patcher.performance.MixinBlockPos",
