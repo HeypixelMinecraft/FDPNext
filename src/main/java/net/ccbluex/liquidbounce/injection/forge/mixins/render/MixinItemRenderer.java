@@ -79,6 +79,7 @@ public abstract class MixinItemRenderer {
 
     /**
      * @author Liuli
+     * @reason Mixin overwrite
      */
     @Overwrite
     private void transformFirstPersonItem(float equipProgress, float swingProgress) {
@@ -95,6 +96,7 @@ public abstract class MixinItemRenderer {
 
     /**
      * @author Liuli
+     * @reason Mixin overwrite
      */
     @Overwrite
     public void renderItemInFirstPerson(float partialTicks) {

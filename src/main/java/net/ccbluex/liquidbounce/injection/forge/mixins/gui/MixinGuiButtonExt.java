@@ -12,6 +12,7 @@ public abstract class MixinGuiButtonExt extends MixinGuiButton {
 
     /**
      * @author CCBlueX
+     * @reason Mixin overwrite
      */
     @Overwrite
     public void drawButton(Minecraft mc, int mouseX, int mouseY) {

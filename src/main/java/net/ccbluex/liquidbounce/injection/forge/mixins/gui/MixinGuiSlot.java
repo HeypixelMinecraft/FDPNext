@@ -151,6 +151,7 @@ public abstract class MixinGuiSlot {
 
     /**
      * @author CCBlueX
+     * @reason Mixin overwrite
      */
     @Overwrite
     public void drawScreen(int mouseXIn, int mouseYIn, float p_148128_3_) {
@@ -242,6 +243,7 @@ public abstract class MixinGuiSlot {
 
     /**
      * @author CCBlueX
+     * @reason Mixin overwrite
      */
     @Overwrite
     protected int getScrollBarX() {

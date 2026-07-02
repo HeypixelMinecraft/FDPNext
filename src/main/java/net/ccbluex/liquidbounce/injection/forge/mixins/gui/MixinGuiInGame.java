@@ -62,7 +62,6 @@ public abstract class MixinGuiInGame extends MixinGui {
     protected void renderTooltip(ScaledResolution sr, float partialTicks) {
         final HUD hud = FDPNext.moduleManager.getModule(HUD.class);
         final HotbarSettings HotbarSettings = FDPNext.moduleManager.getModule(HotbarSettings.class);
-        final EntityPlayer entityplayer = (EntityPlayer) mc.getRenderViewEntity();
 
         float tabHope = this.mc.gameSettings.keyBindPlayerList.isKeyDown() ? 1f : 0f;
         final Animations animations = Animations.INSTANCE;
@@ -75,6 +74,7 @@ public abstract class MixinGuiInGame extends MixinGui {
         }
 
         if(Minecraft.getMinecraft().getRenderViewEntity() instanceof EntityPlayer) {
+            final EntityPlayer entityplayer = (EntityPlayer) mc.getRenderViewEntity();
             String hotbarType = HotbarSettings.getHotbarValue().get();
             Minecraft mc = Minecraft.getMinecraft();
             GlStateManager.resetColor();

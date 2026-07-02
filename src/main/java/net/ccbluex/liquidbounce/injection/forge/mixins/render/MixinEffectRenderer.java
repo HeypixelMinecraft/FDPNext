@@ -32,6 +32,7 @@ public abstract class MixinEffectRenderer {
     /**
      * @author Mojang
      * @author Marco
+     * @reason Mixin overwrite
      */
     @Overwrite
     public void updateEffects() {

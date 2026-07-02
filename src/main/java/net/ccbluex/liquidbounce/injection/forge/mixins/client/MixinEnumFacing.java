@@ -15,21 +15,37 @@ public class MixinEnumFacing {
     @Final
     private int opposite;
 
+    /**
+     * @author FDPNext
+     * @reason Mixin overwrite
+     */
     @Overwrite
     public EnumFacing getOpposite() {
         return StaticStorage.facings()[this.opposite];
     }
 
+    /**
+     * @author FDPNext
+     * @reason Mixin overwrite
+     */
     @Overwrite
     public static EnumFacing getFront(int n) {
         return StaticStorage.facings()[n % StaticStorage.facings().length];
     }
 
+    /**
+     * @author FDPNext
+     * @reason Mixin overwrite
+     */
     @Overwrite
     public static EnumFacing random(Random random) {
         return StaticStorage.facings()[random.nextInt(StaticStorage.facings().length)];
     }
 
+    /**
+     * @author FDPNext
+     * @reason Mixin overwrite
+     */
     @Overwrite
     public static EnumFacing getFacingFromVector(float f, float f2, float f3) {
         EnumFacing enumFacing = EnumFacing.NORTH;
@@ -43,6 +59,10 @@ public class MixinEnumFacing {
         return enumFacing;
     }
 
+    /**
+     * @author FDPNext
+     * @reason Mixin overwrite
+     */
     @Overwrite
     public static EnumFacing getFacingFromAxis(EnumFacing.AxisDirection axisDirection, EnumFacing.Axis axis) {
         for (EnumFacing enumFacing : StaticStorage.facings()) {
