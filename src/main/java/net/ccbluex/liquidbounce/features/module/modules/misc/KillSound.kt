@@ -13,6 +13,8 @@ import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.event.WorldEvent
 import net.ccbluex.liquidbounce.features.module.Module
 import net.ccbluex.liquidbounce.features.module.ModuleCategory
+import net.ccbluex.liquidbounce.features.value.BoolValue
+import net.ccbluex.liquidbounce.features.value.FloatValue
 import net.ccbluex.liquidbounce.features.value.ListValue
 import net.minecraft.client.audio.PositionedSoundRecord
 import net.minecraft.entity.EntityLivingBase
@@ -32,12 +34,17 @@ object KillSound : Module(
         arrayOf("Zako", "ZhangXueFeng", "FAHHHH", "Custom"),
         "Zako"
     )
+    private val volumeValue = FloatValue("Volume", 2.5F, 0.1F, 5F)
+    private val testOnEnableValue = BoolValue("TestOnEnable", false)
 
     private var target: EntityLivingBase? = null
     private var played = false
 
     override fun onEnable() {
         reset()
+        if (testOnEnableValue.get()) {
+            playKillSound()
+        }
     }
 
     @EventTarget
@@ -82,7 +89,17 @@ object KillSound : Module(
                 else -> "fdpnext:kill.zako"
             }
 
-            mc.soundHandler.playSound(PositionedSoundRecord.create(ResourceLocation(soundEvent), 1.0F))
+            val player = mc.thePlayer
+            mc.soundHandler.playSound(
+                PositionedSoundRecord(
+                    ResourceLocation(soundEvent),
+                    volumeValue.get(),
+                    1.0F,
+                    player?.posX?.toFloat() ?: 0F,
+                    player?.posY?.toFloat() ?: 0F,
+                    player?.posZ?.toFloat() ?: 0F
+                )
+            )
         } catch (e: Exception) {
             e.printStackTrace()
             mc.thePlayer?.playSound("random.orb", 1.0F, 1.0F)
