@@ -65,4 +65,9 @@ public class MixinGuiPlayerTabOverlay {
         Animations.INSTANCE.setFlagRenderTabOverlay(false);
         GL11.glPopMatrix();
     }
+
+    @Inject(method = "getPlayerName", at = @At("RETURN"), cancellable = true)
+    private void getPlayerName(NetworkPlayerInfo networkPlayerInfo, CallbackInfoReturnable<String> callbackInfo) {
+        callbackInfo.setReturnValue(HypixelOverlay.formatTabName(networkPlayerInfo, callbackInfo.getReturnValue()));
+    }
 }

@@ -18,21 +18,24 @@ object HypixelApiClient {
 
     private const val USER_AGENT = "Mozilla/5.0"
     private const val TIMEOUT_MS = 10_000
+    private var lastMissingKeyWarn = 0L
 
     @JvmStatic
-    fun fetchPlayer(name: String, apiKey: String): HypixelStats? {
+    fun fetchPlayer(name: String, uuid: String, apiKey: String): HypixelStats? {
         val cleanKey = apiKey.replace(" ", "")
         if (cleanKey.isEmpty()) {
-            ClientUtils.displayChatMessage("§c[HypixelOverlay] API key is missing. Set it in the module settings.")
+            warnMissingKey()
             return null
         }
 
         var connection: HttpURLConnection? = null
         return try {
-            val url = URL("https://api.hypixel.net/v2/player?key=$cleanKey&name=$name")
+            val cleanUuid = uuid.replace("-", "")
+            val url = URL("https://api.hypixel.net/v2/player?uuid=$cleanUuid")
             connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("User-Agent", USER_AGENT)
+            connection.setRequestProperty("API-Key", cleanKey)
             connection.connectTimeout = TIMEOUT_MS
             connection.readTimeout = TIMEOUT_MS
 
@@ -46,18 +49,18 @@ object HypixelApiClient {
             val json = JsonParser().parse(response).asJsonObject
             if (!json.has("success") || !json.get("success").asBoolean) {
                 val cause = if (json.has("cause")) json.get("cause").asString else "Unknown"
-                ClientUtils.displayChatMessage("§c[HypixelOverlay] API error: $cause")
+                ClientUtils.displayChatMessage("\u00A7c[HypixelOverlay] API error: $cause")
                 return null
             }
 
             if (!json.has("player") || json.get("player").isJsonNull) {
-                ClientUtils.displayChatMessage("§c[HypixelOverlay] Player not found: $name")
+                ClientUtils.displayChatMessage("\u00A7c[HypixelOverlay] Player not found: $name")
                 return null
             }
 
             parsePlayer(json.getAsJsonObject("player"))
         } catch (e: Exception) {
-            ClientUtils.displayChatMessage("§c[HypixelOverlay] Failed to fetch stats: ${e.message}")
+            ClientUtils.displayChatMessage("\u00A7c[HypixelOverlay] Failed to fetch stats: ${e.message}")
             null
         } finally {
             connection?.disconnect()
@@ -129,7 +132,15 @@ object HypixelApiClient {
             429 -> "Rate limited"
             else -> "HTTP $code"
         }
-        ClientUtils.displayChatMessage("§c[HypixelOverlay] $message")
+        ClientUtils.displayChatMessage("\u00A7c[HypixelOverlay] $message")
+    }
+
+    private fun warnMissingKey() {
+        val now = System.currentTimeMillis()
+        if (now - lastMissingKeyWarn > 10_000L) {
+            ClientUtils.displayChatMessage("\u00A7c[HypixelOverlay] API key is missing. Set it in the module settings.")
+            lastMissingKeyWarn = now
+        }
     }
 
     private fun getObject(obj: JsonObject?, key: String): JsonObject {
