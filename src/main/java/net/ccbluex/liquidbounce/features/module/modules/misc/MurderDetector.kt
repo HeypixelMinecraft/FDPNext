@@ -187,6 +187,14 @@ object MurderDetector : Module(
         return mc.thePlayer.inventory.mainInventory.any { it?.item == Items.arrow }
     }
 
+    fun getMurderers(): List<EntityPlayer> {
+        return listOfNotNull(murder1, murder2).filter { !it.isDead && it.health > 0F }
+    }
+
+    fun hasDetectedMurderer(player: EntityPlayer): Boolean {
+        return player == murder1 || player == murder2
+    }
+
     private fun stopUsingBow() {
         mc.gameSettings.keyBindUseItem.pressed = false
         if (mc.thePlayer?.heldItem?.item is ItemBow && mc.thePlayer.isUsingItem) {
