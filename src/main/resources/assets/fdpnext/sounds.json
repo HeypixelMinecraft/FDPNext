@@ -1,25 +1,25 @@
 {
   "kill.zako": {
-    "category": "master",
+    "category": "player",
     "sounds": [
       {
-        "name": "FDPNext/kill_snd/zako"
+        "name": "fdpnext:kill_snd/zako"
       }
     ]
   },
   "kill.zhangxuefeng": {
-    "category": "master",
+    "category": "player",
     "sounds": [
       {
-        "name": "FDPNext/kill_snd/zhangxuefeng"
+        "name": "fdpnext:kill_snd/zhangxuefeng"
       }
     ]
   },
   "kill.fahhhh": {
-    "category": "master",
+    "category": "player",
     "sounds": [
       {
-        "name": "FDPNext/kill_snd/fahhhh"
+        "name": "fdpnext:kill_snd/fahhhh"
       }
     ]
   }
