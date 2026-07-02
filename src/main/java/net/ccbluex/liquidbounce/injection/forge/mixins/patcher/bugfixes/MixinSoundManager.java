@@ -4,9 +4,9 @@
 package net.ccbluex.liquidbounce.injection.forge.mixins.patcher.bugfixes;
 
 import net.minecraft.client.audio.ISound;
+import net.minecraft.client.audio.SoundCategory;
 import net.minecraft.client.audio.SoundManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
+import net.minecraft.client.settings.GameSettings;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,7 +20,17 @@ import java.util.*;
 public abstract class MixinSoundManager {
     @Shadow public abstract boolean isSoundPlaying(ISound sound);
 
+    @Shadow public abstract void reloadSoundSystem();
+
+    @Shadow @Final private GameSettings options;
+
+    @Shadow private boolean loaded;
+
     @Shadow @Final private Map<String, ISound> playingSounds;
+
+    @Shadow @Final private Map<ISound, Integer> delayedSounds;
+
+    @Shadow private int playTime;
 
     private final List<String> p_pausedSounds = new ArrayList<>();
 
@@ -44,13 +54,19 @@ public abstract class MixinSoundManager {
         return p_pausedSounds.iterator();
     }
 
-    @Redirect(
-        method = "playSound",
-        slice = @Slice(from = @At(value = "CONSTANT", args = "stringValue=Unable to play unknown soundEvent: {}", ordinal = 0)),
-        at = @At(value = "INVOKE", target = "Lorg/apache/logging/log4j/Logger;warn(Lorg/apache/logging/log4j/Marker;Ljava/lang/String;[Ljava/lang/Object;)V", ordinal = 0, remap = false)
-    )
-    private void p_silenceWarning(Logger instance, Marker marker, String s, Object[] objects) {
-        // No-op
+    @Inject(method = "setSoundCategoryVolume", at = @At("HEAD"))
+    private void fdpnext$reloadSoundSystemWhenVolumeReturns(SoundCategory category, float volume, CallbackInfo callbackInfo) {
+        if (!loaded && volume > 0.0F && options.getSoundLevel(SoundCategory.MASTER) > 0.0F) {
+            reloadSoundSystem();
+        }
+    }
+
+    @Inject(method = "playSound", at = @At("HEAD"))
+    private void fdpnext$reloadSoundSystemBeforePlaying(ISound sound, CallbackInfo callbackInfo) {
+        if (!loaded && options.getSoundLevel(SoundCategory.MASTER) > 0.0F) {
+            reloadSoundSystem();
+            delayedSounds.put(sound, playTime + 5);
+        }
     }
 
     @Inject(method = "resumeAllSounds", at = @At("TAIL"))
