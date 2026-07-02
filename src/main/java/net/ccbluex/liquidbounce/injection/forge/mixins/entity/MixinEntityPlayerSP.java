@@ -5,6 +5,9 @@
  */
 package net.ccbluex.liquidbounce.injection.forge.mixins.entity;
 
+import baritone.api.BaritoneAPI;
+import baritone.api.IBaritone;
+import baritone.api.event.events.SprintStateEvent;
 import net.ccbluex.liquidbounce.FDPNext;
 import net.ccbluex.liquidbounce.event.*;
 import net.ccbluex.liquidbounce.features.module.modules.combat.Criticals;
@@ -296,9 +299,9 @@ public abstract class MixinEntityPlayerSP extends MixinAbstractClientPlayer {
             isSprintDirection = false;
         }
         
-        boolean attemptToggle = sprint.getState() || this.isSprinting() || this.mc.gameSettings.keyBindSprint.isKeyDown();
+        boolean attemptToggle = sprint.getState() || this.isSprinting() || baritoneSprintKeyDown();
         boolean baseIsMoving = (sprint.getState() && sprint.getAllDirectionsValue().get() && (Math.abs(this.movementInput.moveForward) > 0.05f || Math.abs(this.movementInput.moveStrafe) > 0.05f)) || isSprintDirection;
-        boolean baseSprintState = ((!sprint.getHungryValue().get() && sprint.getState()) || (float) this.getFoodStats().getFoodLevel() > 6.0F || this.capabilities.allowFlying) && baseIsMoving && (!this.isCollidedHorizontally || sprint.getCollideValue().get()) && (!this.isSneaking() || sprint.getSneakValue().get()) && !this.isPotionActive(Potion.blindness);
+        boolean baseSprintState = ((!sprint.getHungryValue().get() && sprint.getState()) || (float) this.getFoodStats().getFoodLevel() > 6.0F || baritoneAllowFlying()) && baseIsMoving && (!this.isCollidedHorizontally || sprint.getCollideValue().get()) && (!this.isSneaking() || sprint.getSneakValue().get()) && !this.isPotionActive(Potion.blindness);
         boolean canToggleSprint = this.onGround && !this.movementInput.jump && !this.movementInput.sneak && !this.isPotionActive(Potion.blindness);
         boolean isCurrentUsingItem = getHeldItem() != null && (this.isUsingItem() || (getHeldItem().getItem() instanceof ItemSword && killAura.getBlockingStatus())) && !this.isRiding();
         boolean isCurrentUsingSword = getHeldItem() != null && getHeldItem().getItem() instanceof ItemSword && (killAura.getBlockingStatus() || this.isUsingItem());
@@ -306,7 +309,7 @@ public abstract class MixinEntityPlayerSP extends MixinAbstractClientPlayer {
         baseSprintState = baseSprintState && !(inventoryMove.getNoSprintValue().equals("Real") && inventoryMove.getInvOpen());
         
         if (!attemptToggle && !lastForwardToggleState && baseSprintState && !this.isSprinting() && canToggleSprint && !isCurrentUsingItem && !this.isPotionActive(Potion.blindness)) {
-            if (this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+            if (this.sprintToggleTimer <= 0 && !baritoneSprintKeyDown()) {
                 this.sprintToggleTimer = 7;
             } else {
                 attemptToggle = true;
@@ -395,7 +398,7 @@ public abstract class MixinEntityPlayerSP extends MixinAbstractClientPlayer {
         }
         
         baseIsMoving = (sprint.getState() && sprint.getAllDirectionsValue().get() && (Math.abs(this.movementInput.moveForward) > 0.05f || Math.abs(this.movementInput.moveStrafe) > 0.05f)) || isSprintDirection;
-        baseSprintState = ((!sprint.getHungryValue().get() && sprint.getState()) || (float) this.getFoodStats().getFoodLevel() > 6.0F || this.capabilities.allowFlying) && baseIsMoving && (!this.isCollidedHorizontally || sprint.getCollideValue().get()) && (!this.isSneaking() || sprint.getSneakValue().get()) && !this.isPotionActive(Potion.blindness);
+        baseSprintState = ((!sprint.getHungryValue().get() && sprint.getState()) || (float) this.getFoodStats().getFoodLevel() > 6.0F || baritoneAllowFlying()) && baseIsMoving && (!this.isCollidedHorizontally || sprint.getCollideValue().get()) && (!this.isSneaking() || sprint.getSneakValue().get()) && !this.isPotionActive(Potion.blindness);
         
         //Don't check current Sprint state cuz it's not updated in real time :bruh:
         
@@ -416,7 +419,7 @@ public abstract class MixinEntityPlayerSP extends MixinAbstractClientPlayer {
         attemptToggle = false;
 
         //aac may check it :(
-        if (this.capabilities.allowFlying) {
+        if (baritoneAllowFlying()) {
             if (this.mc.playerController.isSpectatorMode()) {
                 if (!this.capabilities.isFlying) {
                     this.capabilities.isFlying = true;
@@ -780,5 +783,30 @@ public abstract class MixinEntityPlayerSP extends MixinAbstractClientPlayer {
             worldObj.theProfiler.endSection();
         }
     }
-}
 
+    private boolean baritoneSprintKeyDown() {
+        final IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer((EntityPlayerSP) (Object) this);
+
+        if (baritone == null) {
+            return this.mc.gameSettings.keyBindSprint.isKeyDown();
+        }
+
+        final SprintStateEvent event = new SprintStateEvent();
+        baritone.getGameEventHandler().onPlayerSprintState(event);
+
+        if (event.getState() != null) {
+            return event.getState();
+        }
+
+        if (baritone != BaritoneAPI.getProvider().getPrimaryBaritone()) {
+            return false;
+        }
+
+        return this.mc.gameSettings.keyBindSprint.isKeyDown();
+    }
+
+    private boolean baritoneAllowFlying() {
+        final IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer((EntityPlayerSP) (Object) this);
+        return this.capabilities.allowFlying && (baritone == null || !baritone.getPathingBehavior().isPathing());
+    }
+}

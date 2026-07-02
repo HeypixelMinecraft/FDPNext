@@ -4,20 +4,13 @@ import baritone.api.BaritoneAPI;
 import baritone.api.IBaritone;
 import baritone.api.event.events.ChatEvent;
 import baritone.api.event.events.PlayerUpdateEvent;
-import baritone.api.event.events.SprintStateEvent;
 import baritone.api.event.events.type.EventState;
 import baritone.behavior.LookBehavior;
 import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerCapabilities;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 /**
  * @author Brady
@@ -56,45 +49,6 @@ public class MixinEntityPlayerSP {
         if (baritone != null) {
             baritone.getGameEventHandler().onPlayerUpdate(new PlayerUpdateEvent(EventState.PRE));
         }
-    }
-
-    @Redirect(
-            method = "onLivingUpdate",
-            at = @At(
-                    value = "FIELD",
-                    target = "net/minecraft/entity/player/PlayerCapabilities.allowFlying:Z"
-            )
-    )
-    private boolean isAllowFlying(PlayerCapabilities capabilities) {
-        IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer((EntityPlayerSP) (Object) this);
-        if (baritone == null) {
-            return capabilities.allowFlying;
-        }
-        return !baritone.getPathingBehavior().isPathing() && capabilities.allowFlying;
-    }
-
-    @Redirect(
-            method = "onLivingUpdate",
-            at = @At(
-                    value = "INVOKE",
-                    target = "net/minecraft/client/settings/KeyBinding.isKeyDown()Z"
-            )
-    )
-    private boolean isKeyDown(KeyBinding keyBinding) {
-        IBaritone baritone = BaritoneAPI.getProvider().getBaritoneForPlayer((EntityPlayerSP) (Object) this);
-        if (baritone == null) {
-            return keyBinding.isKeyDown();
-        }
-        SprintStateEvent event = new SprintStateEvent();
-        baritone.getGameEventHandler().onPlayerSprintState(event);
-        if (event.getState() != null) {
-            return event.getState();
-        }
-        if (baritone != BaritoneAPI.getProvider().getPrimaryBaritone()) {
-            // hitting control shouldn't make all bots sprint
-            return false;
-        }
-        return keyBinding.isKeyDown();
     }
 
     @Inject(
