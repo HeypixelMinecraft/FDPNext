@@ -13,6 +13,7 @@ import net.ccbluex.liquidbounce.ui.client.GuiBackground;
 import net.ccbluex.liquidbounce.utils.particles.ParticleUtils;
 import net.ccbluex.liquidbounce.utils.render.GLUtils;
 import net.ccbluex.liquidbounce.utils.render.shader.shaders.AuroraShader;
+import net.ccbluex.liquidbounce.utils.watut.WatutManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
@@ -108,8 +109,9 @@ public abstract class MixinGuiScreen {
         }
     }
 
-    @Inject(method = "drawScreen", at = @At("HEAD"))
+    @Inject(method = "drawScreen", at = @At("RETURN"))
     private void drawScreen(int p_drawScreen_1_, int p_drawScreen_2_, float p_drawScreen_3_,final CallbackInfo callbackInfo) {
+        WatutManager.INSTANCE.onGuiDraw(p_drawScreen_1_, p_drawScreen_2_, this.width, this.height);
     }
 
     @ModifyVariable(method = "sendChatMessage(Ljava/lang/String;)V", at = @At("HEAD"))

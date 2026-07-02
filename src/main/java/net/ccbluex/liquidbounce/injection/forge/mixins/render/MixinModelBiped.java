@@ -7,6 +7,7 @@ package net.ccbluex.liquidbounce.injection.forge.mixins.render;
 
 import net.ccbluex.liquidbounce.features.module.modules.client.Rotations;
 import net.ccbluex.liquidbounce.utils.RotationUtils;
+import net.ccbluex.liquidbounce.utils.watut.WatutModelPose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelRenderer;
@@ -25,6 +26,9 @@ public class MixinModelBiped {
     public ModelRenderer bipedRightArm;
 
     @Shadow
+    public ModelRenderer bipedLeftArm;
+
+    @Shadow
     public int heldItemRight;
 
     @Shadow
@@ -38,6 +42,13 @@ public class MixinModelBiped {
         if (Rotations.INSTANCE.getHeadValue().get() && p_setRotationAngles_7_ instanceof EntityPlayer
                 && p_setRotationAngles_7_.equals(Minecraft.getMinecraft().thePlayer)) {
             this.bipedHead.rotateAngleX = RotationUtils.serverRotation.getPitch() / (180F / (float) Math.PI);
+        }
+    }
+
+    @Inject(method = "setRotationAngles", at = @At("RETURN"))
+    private void applyWatutPose(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn, CallbackInfo callbackInfo) {
+        if (entityIn instanceof EntityPlayer) {
+            WatutModelPose.apply((EntityPlayer) entityIn, (ModelBiped) (Object) this);
         }
     }
 }
