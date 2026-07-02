@@ -9,15 +9,24 @@ import net.ccbluex.liquidbounce.FDPNext
 import net.ccbluex.liquidbounce.event.EventTarget
 import net.ccbluex.liquidbounce.event.MotionEvent
 import net.ccbluex.liquidbounce.event.Render2DEvent
+import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.event.WorldEvent
 import net.ccbluex.liquidbounce.features.module.Module
 import net.ccbluex.liquidbounce.features.module.ModuleCategory
 import net.ccbluex.liquidbounce.features.value.BoolValue
+import net.ccbluex.liquidbounce.features.value.FloatValue
+import net.ccbluex.liquidbounce.features.value.IntegerValue
 import net.ccbluex.liquidbounce.ui.client.hud.element.elements.Notification
 import net.ccbluex.liquidbounce.ui.client.hud.element.elements.NotifyType
+import net.ccbluex.liquidbounce.utils.RotationUtils
 import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.init.Items
 import net.minecraft.item.Item
+import net.minecraft.item.ItemBow
+import net.minecraft.network.play.client.C07PacketPlayerDigging
+import net.minecraft.util.BlockPos
 import net.minecraft.util.ChatComponentText
+import net.minecraft.util.EnumFacing
 import java.awt.Color
 
 object MurderDetector : Module(
@@ -29,9 +38,17 @@ object MurderDetector : Module(
     private val showTextValue = BoolValue("ShowText", true)
     private val chatValue = BoolValue("Chat", true)
     private val notificationValue = BoolValue("Notification", true)
+    private val autoShootValue = BoolValue("AutoShoot", false)
+    private val silentAimValue = BoolValue("SilentAim", true).displayable { autoShootValue.get() }
+    private val predictValue = BoolValue("Predict", true).displayable { autoShootValue.get() }
+    private val throughWallsValue = BoolValue("ThroughWalls", false).displayable { autoShootValue.get() }
+    private val maxShootDistanceValue = FloatValue("ShootRange", 55F, 5F, 120F).displayable { autoShootValue.get() }
+    private val chargeTicksValue = IntegerValue("ChargeTicks", 20, 3, 25).displayable { autoShootValue.get() }
+    private val predictSizeValue = FloatValue("PredictSize", 2F, 0.1F, 5F).displayable { autoShootValue.get() && predictValue.get() }
 
     private var murder1: EntityPlayer? = null
     private var murder2: EntityPlayer? = null
+    private var currentShootTarget: EntityPlayer? = null
 
     private val murderItems = setOf(
         267, 272, 256, 280, 271, 268, 273, 369, 277, 359,
@@ -42,12 +59,14 @@ object MurderDetector : Module(
 
     override fun onDisable() {
         clearMurderers()
+        stopUsingBow()
     }
 
     @EventTarget
     @Suppress("UNUSED_PARAMETER")
     fun onWorld(event: WorldEvent) {
         clearMurderers()
+        stopUsingBow()
     }
 
     @EventTarget
@@ -70,6 +89,49 @@ object MurderDetector : Module(
                     alert(player)
                 }
             }
+        }
+    }
+
+    @EventTarget
+    @Suppress("UNUSED_PARAMETER")
+    fun onUpdate(event: UpdateEvent) {
+        if (!autoShootValue.get() || mc.thePlayer == null || mc.theWorld == null) {
+            stopUsingBow()
+            return
+        }
+
+        val target = getShootTarget()
+        if (target == null) {
+            currentShootTarget = null
+            stopUsingBow()
+            return
+        }
+
+        val bowSlot = findBowSlot()
+        if (bowSlot == null || !hasArrow()) {
+            currentShootTarget = null
+            stopUsingBow()
+            return
+        }
+
+        currentShootTarget = target
+        mc.thePlayer.inventory.currentItem = bowSlot
+        RotationUtils.faceBow(target, silentAimValue.get(), predictValue.get(), predictSizeValue.get())
+
+        val heldItem = mc.thePlayer.heldItem
+        if (heldItem?.item !is ItemBow) return
+
+        mc.gameSettings.keyBindUseItem.pressed = true
+        if (!mc.thePlayer.isUsingItem) {
+            mc.playerController.sendUseItem(mc.thePlayer, mc.theWorld, heldItem)
+        }
+
+        if (mc.thePlayer.isUsingItem && mc.thePlayer.itemInUseDuration >= chargeTicksValue.get()) {
+            mc.gameSettings.keyBindUseItem.pressed = false
+            mc.thePlayer.stopUsingItem()
+            mc.netHandler.addToSendQueue(
+                C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, EnumFacing.DOWN)
+            )
         }
     }
 
@@ -102,6 +164,36 @@ object MurderDetector : Module(
             murderItems.contains(Item.getIdFromItem(heldItem.item))
     }
 
+    private fun getShootTarget(): EntityPlayer? {
+        return listOfNotNull(murder1, murder2)
+            .filter { !it.isDead && it.health > 0F }
+            .filter { mc.thePlayer.getDistanceToEntity(it) <= maxShootDistanceValue.get() }
+            .filter { throughWallsValue.get() || mc.thePlayer.canEntityBeSeen(it) }
+            .minByOrNull { mc.thePlayer.getDistanceToEntity(it) }
+    }
+
+    private fun findBowSlot(): Int? {
+        for (slot in 0..8) {
+            val stack = mc.thePlayer.inventory.getStackInSlot(slot) ?: continue
+            if (stack.item is ItemBow) {
+                return slot
+            }
+        }
+        return null
+    }
+
+    private fun hasArrow(): Boolean {
+        if (mc.playerController.isInCreativeMode) return true
+        return mc.thePlayer.inventory.mainInventory.any { it?.item == Items.arrow }
+    }
+
+    private fun stopUsingBow() {
+        mc.gameSettings.keyBindUseItem.pressed = false
+        if (mc.thePlayer?.heldItem?.item is ItemBow && mc.thePlayer.isUsingItem) {
+            mc.thePlayer.stopUsingItem()
+        }
+    }
+
     private fun alert(player: EntityPlayer) {
         val message = "\u00A7e${player.name}\u00A7r is Murderer!"
 
@@ -119,5 +211,6 @@ object MurderDetector : Module(
     private fun clearMurderers() {
         murder1 = null
         murder2 = null
+        currentShootTarget = null
     }
 }
