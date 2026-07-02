@@ -51,7 +51,8 @@ object HypixelServerDetector {
             return true
         }
 
-        return getSidebarLines(scoreboard, objective).any { line ->
+        return getSidebarLines(scoreboard, objective).any { rawLine ->
+            val line = rawLine.lowercase()
             SCOREBOARD_LINE_PATTERNS.any { line.contains(it) }
         }
     }

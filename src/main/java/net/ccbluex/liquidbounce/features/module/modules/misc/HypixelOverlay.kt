@@ -21,6 +21,7 @@ import net.ccbluex.liquidbounce.utils.hypixel.HypixelStatsCache
 import net.ccbluex.liquidbounce.utils.hypixel.NickDetector
 import net.minecraft.client.network.NetworkPlayerInfo
 import net.minecraft.util.EnumChatFormatting
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 /**
@@ -29,7 +30,7 @@ import java.util.concurrent.Executors
 object HypixelOverlay : Module(
     name = "HypixelOverlay",
     category = ModuleCategory.MISC,
-    description = "Hypixel 数据覆盖层：Tab 列表显示 BW/SW 数据、Nick 检测、自动每日奖励。"
+    description = "Hypixel tablist BW/SW stats, nick detection and auto tip."
 ) {
 
     val apiKey = TextValue("API-Key", "")
@@ -44,7 +45,6 @@ object HypixelOverlay : Module(
 
     val displayMode = ListValue("DisplayMode", arrayOf("Compact", "Full", "Lowercase"), "Compact")
 
-    // Bedwars toggles
     val bwEnabled = BoolValue("BW-Enabled", true)
     val bwLevel = BoolValue("BW-Level", true)
     val bwFinals = BoolValue("BW-Finals", false)
@@ -53,7 +53,6 @@ object HypixelOverlay : Module(
     val bwWs = BoolValue("BW-WS", true)
     val bwCr = BoolValue("BW-CR", false)
 
-    // Skywars toggles
     val swEnabled = BoolValue("SW-Enabled", true)
     val swLevel = BoolValue("SW-Level", true)
     val swKills = BoolValue("SW-Kills", false)
@@ -61,9 +60,10 @@ object HypixelOverlay : Module(
     val swWins = BoolValue("SW-Wins", false)
     val swWlr = BoolValue("SW-WLR", true)
 
-    private val fetchExecutor = Executors.newSingleThreadExecutor { r ->
-        Thread(r, "FDPNext-HypixelOverlay-Fetch").apply { isDaemon = true }
+    private val fetchExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "FDPNext-HypixelOverlay-Fetch").apply { isDaemon = true }
     }
+    private val pendingFetches = ConcurrentHashMap.newKeySet<String>()
 
     private var tickCounter = 0
     private var lastTipTime = 0L
@@ -73,20 +73,22 @@ object HypixelOverlay : Module(
         lastTipTime = 0L
     }
 
+    override fun onDisable() {
+        pendingFetches.clear()
+    }
+
     @EventTarget
     fun onUpdate(event: UpdateEvent) {
         if (!state || mc.thePlayer == null || mc.theWorld == null) return
         if (!HypixelServerDetector.isHypixel()) return
 
-        if (autoTip.get()) {
-            if (++tickCounter >= 200) {
-                tickCounter = 0
-                val current = System.currentTimeMillis()
-                val delayMs = tipDelay.get() * 60_000L
-                if (current - lastTipTime >= delayMs) {
-                    mc.thePlayer.sendChatMessage("/tip all")
-                    lastTipTime = current
-                }
+        if (autoTip.get() && ++tickCounter >= 200) {
+            tickCounter = 0
+            val current = System.currentTimeMillis()
+            val delayMs = tipDelay.get() * 60_000L
+            if (current - lastTipTime >= delayMs) {
+                mc.thePlayer.sendChatMessage("/tip all")
+                lastTipTime = current
             }
         }
     }
@@ -99,21 +101,20 @@ object HypixelOverlay : Module(
         if (!state || !HypixelServerDetector.isHypixel()) return original
 
         val profile = info.gameProfile ?: return original
+        val uuid = profile.id?.toString() ?: return original
         val name = profile.name
 
         val prefix = StringBuilder()
         val suffix = StringBuilder()
 
-        // Bedwars / Skywars level prefix
         if (tablist.get()) {
-            val stats = getStats(name)
+            val stats = getStats(name, uuid)
             if (stats != null) {
                 prefix.append(buildPrefix(stats))
                 suffix.append(buildSuffix(stats))
             }
         }
 
-        // Nick detection suffix
         if (nickDetection.get() && NickDetector.isNicked(profile)) {
             suffix.append(EnumChatFormatting.DARK_PURPLE).append(EnumChatFormatting.BOLD).append(" [NICK]")
             if (showRealName.get()) {
@@ -135,25 +136,33 @@ object HypixelOverlay : Module(
         if (!state || !autoTip.get() || !hideTipMessages.get()) return false
         val lower = message.lowercase()
         return lower.contains("you tipped") ||
-                lower.contains("you already tipped everyone") ||
-                lower.contains("no one has a network booster active right now")
+            lower.contains("you already tipped everyone") ||
+            lower.contains("no one has a network booster active right now")
     }
 
     @JvmStatic
-    fun getStats(name: String): HypixelStats? {
+    fun getStats(name: String, uuid: String): HypixelStats? {
         if (!state) return null
-        val cached = HypixelStatsCache.getValid(name, cacheMinutes.get())
+
+        val cacheKey = uuid.replace("-", "").lowercase()
+        val cached = HypixelStatsCache.getValid(cacheKey, cacheMinutes.get())
         if (cached != null) return cached
-        if (!HypixelStatsCache.canRetry(name)) return null
+        if (!HypixelStatsCache.canRetry(cacheKey)) return null
+        if (!pendingFetches.add(cacheKey)) return null
 
         fetchExecutor.execute {
-            val stats = HypixelApiClient.fetchPlayer(name, apiKey.get())
-            if (stats != null) {
-                HypixelStatsCache.put(name, stats)
-            } else {
-                HypixelStatsCache.markFailed(name)
+            try {
+                val stats = HypixelApiClient.fetchPlayer(name, uuid, apiKey.get())
+                if (stats != null) {
+                    HypixelStatsCache.put(cacheKey, stats)
+                } else {
+                    HypixelStatsCache.markFailed(cacheKey)
+                }
+            } finally {
+                pendingFetches.remove(cacheKey)
             }
         }
+
         return null
     }
 
@@ -162,7 +171,7 @@ object HypixelOverlay : Module(
 
         if (HypixelServerDetector.isBedwars() && bwEnabled.get() && bwLevel.get()) {
             val level = stats.bedwars?.level ?: 0
-            builder.append("§7[").append(formatBwLevel(level)).append("§7] ")
+            builder.append("\u00A77[").append(formatBwLevel(level)).append("\u00A77] ")
         } else if (HypixelServerDetector.isSkywars() && swEnabled.get() && swLevel.get()) {
             val level = stats.skywars?.levelFormatted ?: ""
             builder.append(level).append(" ")
@@ -194,9 +203,7 @@ object HypixelOverlay : Module(
         }
 
         if (parts.isEmpty()) return ""
-        val separator = "§8 | "
-        val starter = "§8 ▶ "
-        return starter + parts.joinToString(separator)
+        return "\u00A78 \u25B8 " + parts.joinToString("\u00A78 | ")
     }
 
     private fun format(label: String, value: Any): String {
@@ -206,21 +213,21 @@ object HypixelOverlay : Module(
             is Float -> String.format("%.2f", value)
             else -> value.toString()
         }
+
         return when (mode) {
-            "Compact" -> "§f$text"
-            "Full" -> "§b$label: §f$text"
-            "Lowercase" -> "§b${label.lowercase()}: §f$text"
-            else -> "§f$text"
+            "Compact" -> "\u00A7f$text"
+            "Full" -> "\u00A7b$label: \u00A7f$text"
+            "Lowercase" -> "\u00A7b${label.lowercase()}: \u00A7f$text"
+            else -> "\u00A7f$text"
         }
     }
 
     private fun formatBwLevel(level: Int): String {
         val symbol = when {
-            level >= 3200 -> "✥"
-            level >= 2200 -> "⚝"
-            level >= 1100 -> "✪"
-            else -> "✫"
+            level >= 3200 -> "\u272A"
+            level >= 2200 -> "\u2726"
+            else -> "\u272B"
         }
-        return "§e$level$symbol"
+        return "\u00A7e$level$symbol"
     }
 }

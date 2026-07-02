@@ -8,6 +8,7 @@ import net.ccbluex.liquidbounce.ui.client.gui.newVer.element.module.value.impl.B
 import net.ccbluex.liquidbounce.ui.client.gui.newVer.element.module.value.impl.ListElement
 import net.ccbluex.liquidbounce.ui.client.gui.newVer.element.module.value.impl.IntElement
 import net.ccbluex.liquidbounce.ui.client.gui.newVer.element.module.value.impl.FloatElement
+import net.ccbluex.liquidbounce.ui.client.gui.newVer.element.module.value.impl.TextElement
 import net.ccbluex.liquidbounce.ui.client.gui.newVer.extensions.animSmooth
 import net.ccbluex.liquidbounce.ui.font.Fonts
 import net.ccbluex.liquidbounce.utils.render.BlendUtils
@@ -19,6 +20,7 @@ import net.ccbluex.liquidbounce.features.value.BoolValue
 import net.ccbluex.liquidbounce.features.value.ListValue
 import net.ccbluex.liquidbounce.features.value.FloatValue
 import net.ccbluex.liquidbounce.features.value.IntegerValue
+import net.ccbluex.liquidbounce.features.value.TextValue
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.util.ResourceLocation
 import org.lwjgl.input.Keyboard
@@ -51,6 +53,8 @@ class ModuleElement(val module: Module): MinecraftInstance() {
                 valueElements.add(IntElement(value))
             if (value is FloatValue)
                 valueElements.add(FloatElement(value))
+            if (value is TextValue)
+                valueElements.add(TextElement(value))
         }
     }
 
