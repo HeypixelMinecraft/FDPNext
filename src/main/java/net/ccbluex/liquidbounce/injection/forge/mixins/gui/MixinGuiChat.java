@@ -53,7 +53,7 @@ public abstract class MixinGuiChat extends MixinGuiScreen {
 
     /**
      * @author Liuli
-     * @reason 这种客户端验证需要玩家点击一�?.'开头的100长度字符串，而客户端会自动填�?say来尝试绕过，但是自动填充�?say在需要按上箭头重新发送上一条消息的时候就会因为长度不够导致展示不�?     */
+     * @reason 这种客户端验证需要玩家点击一�?.'开头的100长度字符串，而客户端会自动填�?say来尝试绕过，但是自动填充�?say在需要按上箭头重新发送上一条消息的时候就会因为长度不够导致展示不�?     */
     @Overwrite
     public void getSentHistory(int p_getSentHistory_1_) {
         int i = this.sentHistoryCursor + p_getSentHistory_1_;
@@ -157,6 +157,11 @@ public abstract class MixinGuiChat extends MixinGuiScreen {
      */
     @Inject(method = "sendAutocompleteRequest", at = @At("HEAD"), cancellable = true)
     private void handleClientCommandCompletion(String full, final String ignored, CallbackInfo callbackInfo) {
+        // Only intercept client commands (starting with prefix), let vanilla / commands pass through
+        if (!full.startsWith(String.valueOf(FDPNext.commandManager.getPrefix()))) {
+            return;
+        }
+
         if (FDPNext.commandManager.autoComplete(full)) {
             waitingOnAutocomplete = true;
 
@@ -197,6 +202,23 @@ public abstract class MixinGuiChat extends MixinGuiScreen {
                 resultText = ((String)result[0]).substring(Math.min(((String)result[0]).length(),text.length()));
 
             mc.fontRendererObj.drawStringWithShadow(resultText, 5.5F + inputField.xPosition + mc.fontRendererObj.getStringWidth(inputField.getText()), inputField.yPosition+2f, new Color(165, 165, 165).getRGB());
+        }
+
+        // Show vanilla server command completions (for / commands)
+        if (!inputField.getText().isEmpty() && inputField.getText().startsWith("/")) {
+            String[] textArray = inputField.getText().split(" ");
+            String text = textArray[textArray.length - 1];
+            if (foundPlayerNames != null && !foundPlayerNames.isEmpty()) {
+                String match = foundPlayerNames.stream()
+                    .filter(s -> s.toLowerCase().startsWith(text.toLowerCase()))
+                    .findFirst().orElse(null);
+                if (match != null) {
+                    String resultText = match.substring(Math.min(match.length(), text.length()));
+                    mc.fontRendererObj.drawStringWithShadow(resultText,
+                        5.5F + inputField.xPosition + mc.fontRendererObj.getStringWidth(inputField.getText()),
+                        inputField.yPosition + 2f, new Color(165, 165, 165).getRGB());
+                }
+            }
         }
 
         IChatComponent ichatcomponent =
