@@ -127,17 +127,15 @@ class NoWeb : Module(name = "NoWeb", category = ModuleCategory.MOVEMENT) {
                 }
             }
             "oldgrim" -> {
-                // Skidded from AirClient OldGrim: drop web client-side and tell the
+                // Skidded from Lizz OldGrim: drop web client-side and tell the
                 // server we stopped digging each nearby web block.
                 mc.thePlayer.isInWeb = false
-                BlockUtils.searchBlocks(2).forEach { (pos, block) ->
-                    if (block === Blocks.web) {
-                        mc.netHandler.addToSendQueue(
-                            C07PacketPlayerDigging(
-                                C07PacketPlayerDigging.Action.STOP_DESTROY_BLOCK, pos, EnumFacing.DOWN
-                            )
+                BlockUtils.searchBlocks(2, setOf(Blocks.web)).forEach { (pos, _) ->
+                    mc.netHandler.addToSendQueue(
+                        C07PacketPlayerDigging(
+                            C07PacketPlayerDigging.Action.STOP_DESTROY_BLOCK, pos, EnumFacing.DOWN
                         )
-                    }
+                    )
                 }
             }
         }

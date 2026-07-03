@@ -97,6 +97,31 @@ object BlockUtils : MinecraftInstance() {
     }
 
     /**
+     * Search specific blocks around the player in a specific [radius]
+     * @param filter set of blocks to search for
+     */
+    @JvmStatic
+    fun searchBlocks(radius: Int, filter: Set<Block>): Map<BlockPos, Block> {
+        val blocks = mutableMapOf<BlockPos, Block>()
+
+        for (x in radius downTo -radius + 1) {
+            for (y in radius downTo -radius + 1) {
+                for (z in radius downTo -radius + 1) {
+                    val blockPos = BlockPos(mc.thePlayer.posX.toInt() + x, mc.thePlayer.posY.toInt() + y,
+                            mc.thePlayer.posZ.toInt() + z)
+                    val block = getBlock(blockPos) ?: continue
+
+                    if (filter.contains(block)) {
+                        blocks[blockPos] = block
+                    }
+                }
+            }
+        }
+
+        return blocks
+    }
+
+    /**
      * Check if [axisAlignedBB] has collidable blocks using custom [collide] check
      */
     @JvmStatic
