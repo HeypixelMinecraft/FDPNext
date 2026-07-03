@@ -85,8 +85,8 @@ object BalancedTimer : Module("BalancedTimer", category = ModuleCategory.MISC) {
     private fun drawIndicator(partialTicks: Float, sr: ScaledResolution) {
         if (stage == Stage.IDLE && balance == 0) return
 
-        val x = sr.scaledWidth / 2 - 50
-        val y = sr.scaledHeight / 2 + 20
+        val x = (sr.scaledWidth / 2 - 50).toFloat()
+        val y = (sr.scaledHeight / 2 + 20).toFloat()
 
         // Animate position
         if (stage != Stage.IDLE || balance > 0) {
@@ -97,7 +97,7 @@ object BalancedTimer : Module("BalancedTimer", category = ModuleCategory.MISC) {
 
         // Draw background
         val backgroundColor = Color(0, 0, 0, 120)
-        RenderUtils.drawRoundedCornerRect(x, y + yAnimation, x + 100, y + yAnimation + 30, 5f, backgroundColor.rgb)
+        RenderUtils.drawRoundedCornerRect(x, y + yAnimation, x + 100f, y + yAnimation + 30f, 5f, backgroundColor.rgb)
 
         // Draw stage text
         val stageColor = when (stage) {
@@ -105,10 +105,10 @@ object BalancedTimer : Module("BalancedTimer", category = ModuleCategory.MISC) {
             Stage.RELEASE -> Color(100, 255, 100)
             Stage.IDLE -> Color(200, 200, 200)
         }
-        Fonts.fontSFUI35.drawStringWithShadow(stage.display, x + 5, y + yAnimation + 5, stageColor.rgb)
+        Fonts.fontSFUI35.drawStringWithShadow(stage.display, x + 5f, y + yAnimation + 5f, stageColor.rgb)
 
         // Draw balance count
-        Fonts.fontSFUI35.drawStringWithShadow("Balance: $balance", x + 5, y + yAnimation + 15, Color.WHITE.rgb)
+        Fonts.fontSFUI35.drawStringWithShadow("Balance: $balance", x + 5f, y + yAnimation + 15f, Color.WHITE.rgb)
     }
 
     enum class Stage(val display: String) {
