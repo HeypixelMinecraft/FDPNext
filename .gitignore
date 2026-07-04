@@ -30,3 +30,4 @@ run
 Thumbs.db
 .tmp
 .trae
+*.log
