@@ -349,35 +349,38 @@ open class Targets : Element(-46.0, -40.0, 1F, Side(Side.Horizontal.MIDDLE, Side
     }
 
     private fun drawVape(target: EntityLivingBase) {
+        val font = fontValue.get()
+        val health = target.health
+        val maxHealth = target.maxHealth
+        val healthPct = (health / maxHealth).coerceIn(0f, 1f)
+        val distance = mc.thePlayer.getDistanceToEntityBox(target)
 
-        RenderUtils.drawEntityOnScreen(16, 55, 25, target)
+        // Line 1: Name + Distance (white text)
+        val nameText = target.name
+        val distText = " ${decimalFormat.format(distance)}m"
+        font.drawString(nameText, 0f, 0f, Color.WHITE.rgb)
+        font.drawString(distText, font.getStringWidth(nameText).toFloat(), 0f, Color(180, 180, 180).rgb)
 
-        Fonts.fontTenacityBold35.drawString(target.name, 36.5f, 12.6f / 2f - Fonts.fontTenacityBold35.height / 2f, -1)
+        // Line 2: 2D skin head
+        val headY = (font.FONT_HEIGHT + 4).toFloat()
+        val headSize = 28
+        RenderUtils.quickDrawHead(target.skin, 0, headY.toInt(), headSize, headSize)
 
-        val targetHealth = target.health
-        val targetMaxHealth = target.maxHealth
-        val targetAbsorptionAmount = target.absorptionAmount
-        val targetHealthDWithAbs = targetHealth / (targetMaxHealth + targetAbsorptionAmount).coerceAtLeast(1.0f)
-        val targetHealthD = targetHealth / targetMaxHealth.coerceAtLeast(1.0f)
-        val color: Color? = interpolateColorC(Color.RED, Color(5, 134, 105), targetHealthD)
+        // Line 3: Thin health bar
+        val barY = headY + headSize + 3
+        val barMaxWidth = 60f
+        val barHeight = 2f
 
-        RoundedUtil.drawRound(37f, 12.6f, 68f, 2.9f, 1f, Color(43, 42, 43))
-        RoundedUtil.drawRound(37f, 12.6f, 68f * targetHealthDWithAbs, 2.9f, 1f, color)
-        if (targetAbsorptionAmount > 0) {
-            val absLength = 49f * (targetAbsorptionAmount / (targetMaxHealth + targetAbsorptionAmount))
-            RoundedUtil.drawRound(37f + 68f * targetHealthDWithAbs,
-                12.6f,
-                absLength,
-                2.9f,
-                1f,
-                Color(0xFFAA00))
+        // Health bar background (subtle dark)
+        RenderUtils.drawRect(0f, barY, barMaxWidth, barY + barHeight, Color(0, 0, 0, 80).rgb)
+
+        // Health bar fill (green)
+        val barColor = when {
+            healthPct > 0.6f -> Color(0, 200, 80)
+            healthPct > 0.3f -> Color(255, 200, 0)
+            else -> Color(255, 50, 50)
         }
-
-        val hp = (targetHealth + targetAbsorptionAmount).toString() + "  HP"
-        Fonts.fontTenacityBold35.drawString(hp,
-            105f - Fonts.fontTenacityBold35.getStringWidth(hp),
-            (12.6f - Fonts.fontTenacityBold35.height) / 2f,
-            -1)
+        RenderUtils.drawRect(0f, barY, barMaxWidth * healthPct, barY + barHeight, barColor.rgb)
     }
 
     private fun drawAstolfo(target: EntityLivingBase) {
