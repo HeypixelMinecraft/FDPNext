@@ -76,6 +76,8 @@ dependencies {
 
     include("com.github.UnlegitMC:Astar3d:bec2291cf2") // pathfinding
 
+    include 'javazoom:jlayer:1.0.1'
+
     include fileTree(include: ["*.jar"], dir: "libs")
 }
 
