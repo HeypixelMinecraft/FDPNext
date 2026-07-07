@@ -358,21 +358,21 @@ open class Targets : Element(-46.0, -40.0, 1F, Side(Side.Horizontal.MIDDLE, Side
         // Line 1: Name + Distance (white text)
         val nameText = target.name
         val distText = " ${decimalFormat.format(distance)}m"
-        font.drawString(nameText, 0f, 0f, Color.WHITE.rgb)
-        font.drawString(distText, font.getStringWidth(nameText).toFloat(), 0f, Color(180, 180, 180).rgb)
+        font.drawString(nameText, 0, 0, Color.WHITE.rgb)
+        font.drawString(distText, font.getStringWidth(nameText), 0, Color(180, 180, 180).rgb)
 
         // Line 2: 2D skin head
-        val headY = (font.FONT_HEIGHT + 4).toFloat()
+        val headY = font.FONT_HEIGHT + 4
         val headSize = 28
-        RenderUtils.quickDrawHead(target.skin, 0, headY.toInt(), headSize, headSize)
+        RenderUtils.quickDrawHead(target.skin, 0, headY, headSize, headSize)
 
         // Line 3: Thin health bar
         val barY = headY + headSize + 3
-        val barMaxWidth = 60f
-        val barHeight = 2f
+        val barMaxWidth = 60
+        val barHeight = 2
 
         // Health bar background (subtle dark)
-        RenderUtils.drawRect(0f, barY, barMaxWidth, barY + barHeight, Color(0, 0, 0, 80).rgb)
+        RenderUtils.drawRect(0F, barY.toFloat(), barMaxWidth.toFloat(), (barY + barHeight).toFloat(), Color(0, 0, 0, 80).rgb)
 
         // Health bar fill (green)
         val barColor = when {
@@ -380,7 +380,7 @@ open class Targets : Element(-46.0, -40.0, 1F, Side(Side.Horizontal.MIDDLE, Side
             healthPct > 0.3f -> Color(255, 200, 0)
             else -> Color(255, 50, 50)
         }
-        RenderUtils.drawRect(0f, barY, barMaxWidth * healthPct, barY + barHeight, barColor.rgb)
+        RenderUtils.drawRect(0F, barY.toFloat(), (barMaxWidth * healthPct).toFloat(), (barY + barHeight).toFloat(), barColor.rgb)
     }
 
     private fun drawAstolfo(target: EntityLivingBase) {
