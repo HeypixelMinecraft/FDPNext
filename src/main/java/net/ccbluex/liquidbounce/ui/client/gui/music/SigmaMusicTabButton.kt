@@ -12,7 +12,7 @@ class SigmaMusicTabButton(
     val width: Float = 250f,
     val height: Float = 40f,
     val label: String,
-    private val onClick: () -> Unit
+    private val onClick: (SigmaMusicTabButton) -> Unit
 ) {
     var hovered = false
     var selected = false
@@ -35,7 +35,7 @@ class SigmaMusicTabButton(
 
     fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int): Boolean {
         if (mouseButton == 0 && isHovered(mouseX, mouseY)) {
-            onClick()
+            onClick(this)
             return true
         }
         return false

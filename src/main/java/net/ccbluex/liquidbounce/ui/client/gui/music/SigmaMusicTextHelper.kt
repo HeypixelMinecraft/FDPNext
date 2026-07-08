@@ -95,9 +95,11 @@ object SigmaMusicTextHelper {
             if (cache.size >= MAX_CACHE_SIZE) {
                 val firstKey = cache.keys.first()
                 val removed = cache.remove(firstKey)
-                try {
-                    Minecraft.getMinecraft().textureManager.deleteTexture(removed.texture)
-                } catch (_: Exception) {}
+                removed?.let {
+                    try {
+                        Minecraft.getMinecraft().textureManager.deleteTexture(it.texture)
+                    } catch (_: Exception) {}
+                }
             }
             cache[key] = ct
         }

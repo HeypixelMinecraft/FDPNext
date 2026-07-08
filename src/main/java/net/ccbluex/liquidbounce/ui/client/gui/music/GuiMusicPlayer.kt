@@ -1,6 +1,5 @@
 package net.ccbluex.liquidbounce.ui.client.gui.music
 
-import net.ccbluex.liquidbounce.skid.sigma.AudioRepeatMode
 import net.ccbluex.liquidbounce.skid.sigma.NeteaseApiSearch
 import net.ccbluex.liquidbounce.skid.sigma.SigmaMusicManager
 import net.ccbluex.liquidbounce.skid.sigma.SongInfo
@@ -130,28 +129,28 @@ class GuiMusicPlayer : GuiScreen() {
 
     private fun initializeTabs() {
         tabs.clear()
-        tabs.add(SigmaMusicTabButton("search", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "Search") {
+        tabs.add(SigmaMusicTabButton("search", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "Search") { btn ->
             showSearchBox = true
-            currentTab = it
+            currentTab = btn
         })
-        tabs.add(SigmaMusicTabButton("bundled", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "Bundled Music") {
+        tabs.add(SigmaMusicTabButton("bundled", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "Bundled Music") { btn ->
             showSearchBox = false
-            currentTab = it
+            currentTab = btn
             loadBundledMusic()
         })
-        tabs.add(SigmaMusicTabButton("local", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "Local Music") {
+        tabs.add(SigmaMusicTabButton("local", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "Local Music") { btn ->
             showSearchBox = false
-            currentTab = it
+            currentTab = btn
             loadLocalMusic()
         })
-        tabs.add(SigmaMusicTabButton("netease_hot", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "网易云热歌") {
+        tabs.add(SigmaMusicTabButton("netease_hot", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "网易云热歌") { btn ->
             showSearchBox = false
-            currentTab = it
+            currentTab = btn
             loadNeteaseHot()
         })
-        tabs.add(SigmaMusicTabButton("netease_new", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "网易云新歌") {
+        tabs.add(SigmaMusicTabButton("netease_new", 0f, 0f, TAB_WIDTH.toFloat(), TAB_HEIGHT.toFloat(), "网易云新歌") { btn ->
             showSearchBox = false
-            currentTab = it
+            currentTab = btn
             loadNeteaseNew()
         })
         // 默认选中第一个非搜索 tab
@@ -499,15 +498,8 @@ class GuiMusicPlayer : GuiScreen() {
         }
         // 循环
         if (isInRect(mouseX, mouseY, barX + 14, barY + 34, 27f, 20f)) {
-            // Sigma 循环模式切换
-            musicManager.setRepeatMode(
-                when (musicManager.getRepeatMode()) {
-                    AudioRepeatMode.REPEAT -> AudioRepeatMode.REPEAT_ONE
-                    AudioRepeatMode.REPEAT_ONE -> AudioRepeatMode.SHUFFLE
-                    AudioRepeatMode.SHUFFLE -> AudioRepeatMode.REPEAT
-                    else -> AudioRepeatMode.REPEAT
-                }
-            )
+            // Sigma 循环模式切换: NO_REPEAT -> REPEAT -> LOOP_CURRENT
+            musicManager.setRepeatMode(musicManager.getRepeatMode().getNext())
             return
         }
         // 进度条

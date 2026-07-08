@@ -5,6 +5,7 @@ import net.ccbluex.liquidbounce.utils.render.RenderUtils
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.util.ResourceLocation
+import org.lwjgl.opengl.GL11
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
@@ -34,21 +35,22 @@ class SigmaMusicThumbnailButton(
 
         // 绘制封面
         val coverTexture = CoverTextureManager.get(coverKey)
+        val coverSize = width - 8f
         if (coverTexture != null) {
             GlStateManager.enableBlend()
             Minecraft.getMinecraft().textureManager.bindTexture(coverTexture)
-            GuiMusicPlayer.drawModalRect(x + 4, y + 4, 183 - 8f, 183 - 8f)
+            GuiMusicPlayer.drawModalRect(x + 4f, y + 4f, coverSize, coverSize)
             GlStateManager.disableBlend()
         } else {
             // 默认紫色占位 + 中心音乐图标
-            RenderUtils.drawRoundedRect(x + 4, y + 4, x + width - 4, y + 4 + (width - 8), 8f, 0xCC2D1B3D.toInt())
+            RenderUtils.drawRoundedRect(x + 4, y + 4, x + width - 4, y + 4 + coverSize, 8f, 0xCC2D1B3D.toInt())
             // 中心音乐图标（白色音符）
-            drawMusicIcon(x + width / 2, y + 4 + (width - 8) / 2, (width - 8) * 0.3f, 0xFFEEEEEE.toInt())
+            drawMusicIcon(x + width / 2, y + 4 + coverSize / 2, coverSize * 0.3f, 0xFFEEEEEE.toInt())
         }
 
         // 标题区域
-        val titleY = y + 4 + (width - 8) + 8
-        val titleHeight = height - (width - 8) - 12
+        val titleY = y + 4 + coverSize + 8
+        val titleHeight = height - coverSize - 12
 
         // 标题文本
         val title = track.title
