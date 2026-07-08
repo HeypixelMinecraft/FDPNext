@@ -15,6 +15,7 @@ import org.lwjgl.input.Mouse
 import org.lwjgl.opengl.GL11
 import java.awt.Desktop
 import java.io.File
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 
 class GuiMusicPlayer : GuiScreen() {
@@ -48,7 +49,7 @@ class GuiMusicPlayer : GuiScreen() {
     private lateinit var volumeSlider: MusicVolumeSlider
     private lateinit var searchBox: MusicSearchBox
 
-    private val thumbnails = mutableListOf<MusicThumbnailButton>()
+    private val thumbnails = CopyOnWriteArrayList<MusicThumbnailButton>()
     private var scrollOffset = 0
     private val thumbnailColumns = 3
     private val thumbnailWidth = 230f
@@ -61,8 +62,8 @@ class GuiMusicPlayer : GuiScreen() {
 
     private var showSearch = false
     private var searchText = ""
-    private var searchResults = mutableListOf<SongInfo>()
-    private var searchThumbnails = mutableListOf<MusicThumbnailButton>()
+    private var searchResults = CopyOnWriteArrayList<SongInfo>()
+    private var searchThumbnails = CopyOnWriteArrayList<MusicThumbnailButton>()
     private var isSearching = false
 
     private val contentExecutor = Executors.newSingleThreadExecutor()

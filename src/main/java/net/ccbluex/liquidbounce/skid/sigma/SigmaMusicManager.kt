@@ -8,6 +8,7 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.BooleanControl
@@ -23,6 +24,8 @@ object SigmaMusicManager {
     private var repeatMode = AudioRepeatMode.REPEAT
     private var audioThread: Thread? = null
     private var sourceDataLine: SourceDataLine? = null
+    private val shouldStop = AtomicBoolean(false)
+    @Volatile private var lastSetVolume = -1
 
     @Volatile var songTitle = ""; private set
     @Volatile var currentPositionMs = 0L; private set
@@ -73,17 +76,20 @@ object SigmaMusicManager {
 
     fun pause() {
         isPlaying = false
+        shouldStop.set(true)
         sourceDataLine?.flush()
     }
 
     fun resume() {
         if (playlist.size > 0) {
+            shouldStop.set(false)
             isPlaying = true
         }
     }
 
     fun stop() {
         isPlaying = false
+        shouldStop.set(true)
         audioThread?.interrupt()
         audioThread = null
         try { sourceDataLine?.close() } catch (_: Exception) {}
@@ -124,6 +130,8 @@ object SigmaMusicManager {
     fun getAmplitudes(): List<Double> = amplitudes.toList()
 
     fun hasVisualizerData(): Boolean = visualizerData.isNotEmpty()
+
+    fun requestStop(): Boolean = shouldStop.get()
 
     fun getCurrentLyric(): String {
         val lyrics = currentLyrics ?: return ""
@@ -226,8 +234,10 @@ object SigmaMusicManager {
     fun getCurrentTrack(): SongInfo? = getTrackAt(currentIndex)
 
     private fun startPlayback() {
+        shouldStop.set(true)
         audioThread?.interrupt()
 
+        shouldStop.set(false)
         audioThread = Thread({
             try {
                 val track = getCurrentTrack() ?: return@Thread
@@ -238,6 +248,7 @@ object SigmaMusicManager {
                 currentYrcLyrics = null
                 visualizerData.clear()
                 amplitudes.clear()
+                lastSetVolume = -1
 
                 if (track.isLocal && track.localFile != null) {
                     playLocalFile(track.localFile)
@@ -286,8 +297,11 @@ object SigmaMusicManager {
     }
 
     private fun playMp3Stream(inputStream: InputStream, localFile: File?) {
+        var localBitstream: Bitstream? = null
+        var localLine: SourceDataLine? = null
         try {
             val bitstream = Bitstream(inputStream)
+            localBitstream = bitstream
             val mp3Decoder = Decoder()
 
             if (localFile != null) {
@@ -300,29 +314,20 @@ object SigmaMusicManager {
             val channels = if (firstHeader.mode() == Header.SINGLE_CHANNEL) 1 else 2
 
             val mp3Format = AudioFormat(sampleRate.toFloat(), 16, channels, true, false)
-            sourceDataLine = AudioSystem.getSourceDataLine(mp3Format)
-            sourceDataLine!!.open(mp3Format)
-            sourceDataLine!!.start()
+            val line = AudioSystem.getSourceDataLine(mp3Format)
+            localLine = line
+            sourceDataLine = line
+            line.open(mp3Format)
+            line.start()
 
             isPlaying = true
             var frameHeader: Header? = firstHeader
             var frameCount = 0
             val msPerFrame = firstHeader.ms_per_frame()
             var pcmBytes: ByteArray? = null
+            var framesSinceVisualizer = 0
 
-            while (frameHeader != null) {
-                if (!isPlaying) {
-                    Thread.sleep(300)
-                    visualizerData.clear()
-                    if (Thread.interrupted()) {
-                        sourceDataLine?.close()
-                        bitstream.close()
-                        inputStream.close()
-                        return
-                    }
-                    continue
-                }
-
+            while (frameHeader != null && !shouldStop.get() && !Thread.currentThread().isInterrupted) {
                 val output = mp3Decoder.decodeFrame(frameHeader, bitstream) ?: break
                 val sampleBuf = output as javazoom.jl.decoder.SampleBuffer
                 val samples = sampleBuf.getBuffer()
@@ -337,7 +342,7 @@ object SigmaMusicManager {
                     pcmBytes!![i * 2 + 1] = (samples[i].toInt() shr 8 and 0xFF).toByte()
                 }
 
-                sourceDataLine?.write(pcmBytes!!, 0, pcmBytes!!.size)
+                line.write(pcmBytes!!, 0, pcmBytes!!.size)
 
                 frameCount++
                 currentPositionMs = (frameCount * msPerFrame).toLong()
@@ -346,24 +351,26 @@ object SigmaMusicManager {
                     durationMs = (frameCount * msPerFrame).toLong()
                 }
 
-                processVisualizerData(pcmBytes!!, mp3Format)
-                adjustAudioVolume(sourceDataLine!!, volume)
+                framesSinceVisualizer++
+                if (framesSinceVisualizer >= 3) {
+                    framesSinceVisualizer = 0
+                    processVisualizerData(pcmBytes!!, mp3Format)
+                }
 
-                if (Thread.interrupted()) {
-                    sourceDataLine?.close()
-                    bitstream.close()
-                    inputStream.close()
-                    return
+                if (volume != lastSetVolume) {
+                    lastSetVolume = volume
+                    adjustAudioVolume(line, volume)
                 }
 
                 bitstream.closeFrame()
                 frameHeader = bitstream.readFrame()
             }
 
-            sourceDataLine?.drain()
-            sourceDataLine?.close()
+            line.drain()
+            line.close()
             bitstream.close()
             inputStream.close()
+            sourceDataLine = null
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
         } catch (e: Exception) {
@@ -371,12 +378,19 @@ object SigmaMusicManager {
                 System.err.println("[SigmaMusicManager] MP3 playback error: ${e.message}")
                 e.printStackTrace()
             }
+        } finally {
+            try { localLine?.close() } catch (_: Exception) {}
+            try { localBitstream?.close() } catch (_: Exception) {}
+            try { inputStream.close() } catch (_: Exception) {}
+            sourceDataLine = null
         }
 
-        if (repeatMode == AudioRepeatMode.LOOP_CURRENT) {
-            startPlayback()
-        } else if (repeatMode == AudioRepeatMode.REPEAT) {
-            next()
+        if (!shouldStop.get()) {
+            if (repeatMode == AudioRepeatMode.LOOP_CURRENT) {
+                startPlayback()
+            } else if (repeatMode == AudioRepeatMode.REPEAT) {
+                next()
+            }
         }
     }
 

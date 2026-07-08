@@ -12,6 +12,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 class MusicThumbnailButton(
     val track: SongInfo,
@@ -26,8 +27,24 @@ class MusicThumbnailButton(
     private var coverTexture: ResourceLocation? = null
     private var coverLoaded = false
     private var coverLoading = false
+    private var pendingCoverImage: java.awt.image.BufferedImage? = null
+    private val hasPendingCover = AtomicBoolean(false)
 
     fun draw(partialTicks: Float) {
+        if (hasPendingCover.get()) {
+            val img = pendingCoverImage
+            if (img != null) {
+                val resized = ImageUtils.resizeImage(img, 48, 48)
+                val dynamicTexture = DynamicTexture(resized)
+                val loc = ResourceLocation("fdpnext", "cover_${track.neteaseSongId}_${track.title.hashCode()}")
+                Minecraft.getMinecraft().textureManager.loadTexture(loc, dynamicTexture)
+                coverTexture = loc
+                coverLoaded = true
+                pendingCoverImage = null
+                hasPendingCover.set(false)
+            }
+        }
+
         val bgColor = if (hovered) 0x30FFFFFF.toInt() else 0x18FFFFFF
         RenderUtils.drawRoundedRect(x, y, x + width, y + height, 4f, bgColor)
 
@@ -90,12 +107,8 @@ class MusicThumbnailButton(
                 if (conn.responseCode in 200..399) {
                     val img = javax.imageio.ImageIO.read(conn.inputStream)
                     if (img != null) {
-                        val resized = ImageUtils.resizeImage(img, 48, 48)
-                        val dynamicTexture = DynamicTexture(resized)
-                        val loc = ResourceLocation("fdpnext", "cover_${track.neteaseSongId}_${track.title.hashCode()}")
-                        Minecraft.getMinecraft().textureManager.loadTexture(loc, dynamicTexture)
-                        coverTexture = loc
-                        coverLoaded = true
+                        pendingCoverImage = img
+                        hasPendingCover.set(true)
                     }
                 }
                 conn.disconnect()
