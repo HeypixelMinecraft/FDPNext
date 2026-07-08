@@ -234,10 +234,19 @@ object SigmaMusicManager {
     fun getCurrentTrack(): SongInfo? = getTrackAt(currentIndex)
 
     private fun startPlayback() {
+        // 停止旧线程并等待其结束
         shouldStop.set(true)
-        audioThread?.interrupt()
+        val oldThread = audioThread
+        if (oldThread != null && oldThread.isAlive) {
+            oldThread.interrupt()
+            try {
+                oldThread.join(1000) // 等待最多1秒
+            } catch (_: InterruptedException) {}
+        }
 
+        // 重置停止标志
         shouldStop.set(false)
+        
         audioThread = Thread({
             try {
                 val track = getCurrentTrack() ?: return@Thread
@@ -286,14 +295,19 @@ object SigmaMusicManager {
             }
         }
 
+        // 先缓存MP3到内存
         val conn = URL(urlToPlay).openConnection()
         conn.connectTimeout = 14000
         conn.readTimeout = 14000
         conn.setRequestProperty("User-Agent", NeteaseConstants.UA_PC_BROWSER)
 
         val inputStream = conn.getInputStream()
+        val bufferedData = inputStream.readBytes()
+        inputStream.close()
 
-        playMp3Stream(inputStream, null)
+        // 缓存完成后开始播放
+        val byteArrayInputStream = java.io.ByteArrayInputStream(bufferedData)
+        playMp3Stream(byteArrayInputStream, null)
     }
 
     private fun playMp3Stream(inputStream: InputStream, localFile: File?) {
