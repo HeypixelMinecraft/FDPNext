@@ -14,7 +14,7 @@ import java.util.LinkedHashMap
 
 object MusicPlayerTextHelper {
 
-    private const val MAX_CACHE_SIZE = 256
+    private const val MAX_CACHE_SIZE = 64
 
     private val textCache = object : LinkedHashMap<String, CachedText>(MAX_CACHE_SIZE, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedText>): Boolean {

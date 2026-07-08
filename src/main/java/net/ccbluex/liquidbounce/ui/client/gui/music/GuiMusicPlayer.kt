@@ -21,8 +21,6 @@ import java.util.concurrent.Executors
 class GuiMusicPlayer : GuiScreen() {
 
     companion object {
-        private const val PANEL_WIDTH = 800
-        private const val PANEL_HEIGHT = 600
         private const val TAB_WIDTH = 170
         private const val BOTTOM_BAR_HEIGHT = 60
         private const val HEADER_HEIGHT = 40
@@ -41,6 +39,8 @@ class GuiMusicPlayer : GuiScreen() {
 
     private var panelX = 0f
     private var panelY = 0f
+    private var panelWidth = 800
+    private var panelHeight = 600
 
     private val tabs = mutableListOf<MusicTabButton>()
     private var activeTabIndex = -1
@@ -78,22 +78,32 @@ class GuiMusicPlayer : GuiScreen() {
     private var hoverSearch = false
 
     override fun initGui() {
-        panelX = (width - PANEL_WIDTH) / 2f
-        panelY = (height - PANEL_HEIGHT) / 2f
+        // 响应式面板尺寸计算
+        val sr = net.minecraft.client.gui.ScaledResolution(mc)
+        val screenWidth = sr.scaledWidth
+        val screenHeight = sr.scaledHeight
+        
+        // 计算面板尺寸（85%屏幕尺寸，限制在合理范围内）
+        panelWidth = (screenWidth * 0.85f).toInt().coerceIn(400, 900)
+        panelHeight = (screenHeight * 0.85f).toInt().coerceIn(300, 650)
+        
+        // 计算面板位置（居中，确保不超出屏幕）
+        panelX = ((screenWidth - panelWidth) / 2f).coerceAtLeast(0f)
+        panelY = ((screenHeight - panelHeight) / 2f).coerceAtLeast(0f)
 
         progressBar = MusicProgressBar(
-            panelX + 100, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 10,
-            PANEL_WIDTH - 200f, 8f
+            panelX + 100, panelY + panelHeight - BOTTOM_BAR_HEIGHT + 10,
+            panelWidth - 200f, 8f
         )
 
         volumeSlider = MusicVolumeSlider(
-            panelX + PANEL_WIDTH - 80, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 20,
+            panelX + panelWidth - 80, panelY + panelHeight - BOTTOM_BAR_HEIGHT + 20,
             60f, 8f
         )
 
         searchBox = MusicSearchBox(
             panelX + TAB_WIDTH + 10, panelY + HEADER_HEIGHT + 5,
-            PANEL_WIDTH - TAB_WIDTH - 20f, 20f
+            panelWidth - TAB_WIDTH - 20f, 20f
         )
         searchBox.init(mc!!, width, height)
 
@@ -194,19 +204,19 @@ class GuiMusicPlayer : GuiScreen() {
     }
 
     private fun drawPanelBackground() {
-        RenderUtils.drawRoundedRect(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 8f, 0xE01A1A2A.toInt())
+        RenderUtils.drawRoundedRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 8f, 0xE01A1A2A.toInt())
 
-        RenderUtils.drawRect(panelX, panelY, panelX + PANEL_WIDTH, panelY + HEADER_HEIGHT, 0x40000000)
+        RenderUtils.drawRect(panelX, panelY, panelX + panelWidth, panelY + HEADER_HEIGHT, 0x40000000)
 
-        RenderUtils.drawRect(panelX, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 0x40000000)
+        RenderUtils.drawRect(panelX, panelY + panelHeight - BOTTOM_BAR_HEIGHT, panelX + panelWidth, panelY + panelHeight, 0x40000000)
 
-        RenderUtils.drawRect(panelX + TAB_WIDTH, panelY + HEADER_HEIGHT, panelX + TAB_WIDTH + 1, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT, 0x20FFFFFF)
+        RenderUtils.drawRect(panelX + TAB_WIDTH, panelY + HEADER_HEIGHT, panelX + TAB_WIDTH + 1, panelY + panelHeight - BOTTOM_BAR_HEIGHT, 0x20FFFFFF)
     }
 
     private fun drawHeader() {
         MusicPlayerTextHelper.drawText(panelX + 12, panelY + 12, "Music Player", 0xFFEEEEEE.toInt(), 18)
 
-        val searchBtnX = panelX + PANEL_WIDTH - 60
+        val searchBtnX = panelX + panelWidth - 60
         val searchBtnY = panelY + 10
         val searchBtnW = 50f
         val searchBtnH = 20f
@@ -227,9 +237,9 @@ class GuiMusicPlayer : GuiScreen() {
         GL11.glEnable(GL11.GL_SCISSOR_TEST)
         val scaleFactor = net.minecraft.client.gui.ScaledResolution(mc).scaleFactor
         val scissorX = ((panelX + TAB_WIDTH + 1) * scaleFactor).toInt()
-        val scissorY = ((height - (panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT)) * scaleFactor).toInt()
-        val scissorW = ((PANEL_WIDTH - TAB_WIDTH - 1) * scaleFactor).toInt()
-        val scissorH = ((PANEL_HEIGHT - HEADER_HEIGHT - BOTTOM_BAR_HEIGHT) * scaleFactor).toInt()
+        val scissorY = ((height - (panelY + panelHeight - BOTTOM_BAR_HEIGHT)) * scaleFactor).toInt()
+        val scissorW = ((panelWidth - TAB_WIDTH - 1) * scaleFactor).toInt()
+        val scissorH = ((panelHeight - HEADER_HEIGHT - BOTTOM_BAR_HEIGHT) * scaleFactor).toInt()
         GL11.glScissor(scissorX, scissorY, scissorW, scissorH)
 
         if (showSearch) {
@@ -245,7 +255,7 @@ class GuiMusicPlayer : GuiScreen() {
     }
 
     private fun drawBottomBar(mouseX: Int, mouseY: Int, partialTicks: Float) {
-        val barY = panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT
+        val barY = panelY + panelHeight - BOTTOM_BAR_HEIGHT
 
         val songTitle = SigmaMusicManager.songTitle
         if (songTitle.isNotEmpty()) {
@@ -289,13 +299,13 @@ class GuiMusicPlayer : GuiScreen() {
             SigmaMusicManager.setRepeatMode(repeatMode.getNext())
         }
 
-        val volX = panelX + PANEL_WIDTH - 80
+        val volX = panelX + panelWidth - 80
         val volY = barY + 20
         volumeSlider.x = volX
         volumeSlider.y = volY
         volumeSlider.draw(partialTicks)
 
-        val folderX = panelX + PANEL_WIDTH - 140
+        val folderX = panelX + panelWidth - 140
         val folderBg = if (hoverFolder) 0x302080FF else 0x20FFFFFF
         RenderUtils.drawRoundedRect(folderX, barY + 5, folderX + 50, barY + 25, 4f, folderBg)
         MusicPlayerTextHelper.drawText(folderX + 6, barY + 9, "Open", 0xFFEEEEEE.toInt(), 12)
@@ -314,7 +324,7 @@ class GuiMusicPlayer : GuiScreen() {
             val amplitudes = SigmaMusicManager.getAmplitudes()
             if (amplitudes.isNotEmpty()) {
                 val barCount = minOf(amplitudes.size, 60)
-                val barWidth = (PANEL_WIDTH - TAB_WIDTH).toFloat() / barCount
+                val barWidth = (panelWidth - TAB_WIDTH).toFloat() / barCount
                 val maxBarHeight = 40f
 
                 for (i in 0 until barCount) {
@@ -324,10 +334,10 @@ class GuiMusicPlayer : GuiScreen() {
 
                     if (barH > 0.5f) {
                         val bx = panelX + TAB_WIDTH + i * barWidth
-                        val by = panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT - barH
+                        val by = panelY + panelHeight - BOTTOM_BAR_HEIGHT - barH
                         val alpha = (0.3 + 0.5 * normalizedAmp).coerceAtMost(0.8)
                         val color = ((alpha * 255).toInt() shl 24) or 0x2080FF
-                        RenderUtils.drawRect(bx, by, bx + barWidth - 1, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT, color)
+                        RenderUtils.drawRect(bx, by, bx + barWidth - 1, panelY + panelHeight - BOTTOM_BAR_HEIGHT, color)
                     }
                 }
             }
@@ -353,19 +363,19 @@ class GuiMusicPlayer : GuiScreen() {
             progressBar.mouseClicked(mouseX, mouseY, mouseButton)
             volumeSlider.mouseClicked(mouseX, mouseY, mouseButton)
 
-            if (isControlHovered(mouseX, mouseY, panelX + 30, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
+            if (isControlHovered(mouseX, mouseY, panelX + 30, panelY + panelHeight - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
                 SigmaMusicManager.previous()
-            } else if (isControlHovered(mouseX, mouseY, panelX + 60, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
+            } else if (isControlHovered(mouseX, mouseY, panelX + 60, panelY + panelHeight - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
                 if (SigmaMusicManager.isPlaying) SigmaMusicManager.pause() else SigmaMusicManager.resume()
-            } else if (isControlHovered(mouseX, mouseY, panelX + 90, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
+            } else if (isControlHovered(mouseX, mouseY, panelX + 90, panelY + panelHeight - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
                 SigmaMusicManager.next()
-            } else if (isControlHovered(mouseX, mouseY, panelX + 120, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
+            } else if (isControlHovered(mouseX, mouseY, panelX + 120, panelY + panelHeight - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
                 SigmaMusicManager.stop()
-            } else if (isControlHovered(mouseX, mouseY, panelX + 150, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
+            } else if (isControlHovered(mouseX, mouseY, panelX + 150, panelY + panelHeight - BOTTOM_BAR_HEIGHT + 12, 24, 20)) {
                 SigmaMusicManager.setRepeatMode(SigmaMusicManager.getRepeatMode().getNext())
             }
 
-            val searchHeaderX = panelX + PANEL_WIDTH - 60
+            val searchHeaderX = panelX + panelWidth - 60
             val searchHeaderY = panelY + 10
             if (mouseX.toFloat() in searchHeaderX..(searchHeaderX + 50) && mouseY.toFloat() in searchHeaderY..(searchHeaderY + 20)) {
                 showSearch = true
@@ -374,8 +384,8 @@ class GuiMusicPlayer : GuiScreen() {
                 if (tabs.size > 3) tabs[3].selected = true
             }
 
-            val folderX = panelX + PANEL_WIDTH - 140
-            val barY = panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT
+            val folderX = panelX + panelWidth - 140
+            val barY = panelY + panelHeight - BOTTOM_BAR_HEIGHT
             if (mouseX.toFloat() in folderX..(folderX + 50) && mouseY.toFloat() in (barY + 5)..(barY + 25)) {
                 openMusicFolder()
             }
@@ -401,14 +411,14 @@ class GuiMusicPlayer : GuiScreen() {
         val mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1
 
         if (isDragging) {
-            panelX = (mouseX.toFloat() - dragOffsetX).coerceIn(0f, (width - PANEL_WIDTH).toFloat())
-            panelY = (mouseY.toFloat() - dragOffsetY).coerceIn(0f, (height - PANEL_HEIGHT).toFloat())
+            panelX = (mouseX.toFloat() - dragOffsetX).coerceIn(0f, (width - panelWidth).toFloat())
+            panelY = (mouseY.toFloat() - dragOffsetY).coerceIn(0f, (height - panelHeight).toFloat())
             updatePositions()
         }
 
         val dWheel = Mouse.getEventDWheel()
         if (dWheel != 0) {
-            if (mouseX.toFloat() in (panelX + TAB_WIDTH)..(panelX + PANEL_WIDTH)) {
+            if (mouseX.toFloat() in (panelX + TAB_WIDTH)..(panelX + panelWidth)) {
                 if (showSearch) {
                     searchBox.mouseScrolled(dWheel)
                 } else {
@@ -416,7 +426,7 @@ class GuiMusicPlayer : GuiScreen() {
                 }
             }
 
-            if (isControlHovered(mouseX, mouseY, panelX + PANEL_WIDTH - 80, panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 16, 60, 16)) {
+            if (isControlHovered(mouseX, mouseY, panelX + panelWidth - 80, panelY + panelHeight - BOTTOM_BAR_HEIGHT + 16, 60, 16)) {
                 volumeSlider.mouseScrolled(dWheel)
             }
         }
@@ -438,7 +448,7 @@ class GuiMusicPlayer : GuiScreen() {
 
     private fun scrollThumbnails(delta: Int) {
         val totalHeight = ((thumbnails.size + thumbnailColumns - 1) / thumbnailColumns) * (thumbnailHeight + thumbnailPadding)
-        val visibleHeight = PANEL_HEIGHT - HEADER_HEIGHT - BOTTOM_BAR_HEIGHT - 20
+        val visibleHeight = panelHeight - HEADER_HEIGHT - BOTTOM_BAR_HEIGHT - 20
         if (totalHeight <= visibleHeight) return
 
         val scrollStep = 40f
@@ -449,10 +459,10 @@ class GuiMusicPlayer : GuiScreen() {
 
     private fun updatePositions() {
         progressBar.x = panelX + 100
-        progressBar.y = panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 10
+        progressBar.y = panelY + panelHeight - BOTTOM_BAR_HEIGHT + 10
 
-        volumeSlider.x = panelX + PANEL_WIDTH - 80
-        volumeSlider.y = panelY + PANEL_HEIGHT - BOTTOM_BAR_HEIGHT + 20
+        volumeSlider.x = panelX + panelWidth - 80
+        volumeSlider.y = panelY + panelHeight - BOTTOM_BAR_HEIGHT + 20
 
         searchBox.x = panelX + TAB_WIDTH + 10
         searchBox.y = panelY + HEADER_HEIGHT + 5
