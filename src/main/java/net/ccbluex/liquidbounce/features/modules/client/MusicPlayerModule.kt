@@ -1,7 +1,5 @@
 package net.ccbluex.liquidbounce.features.module.modules.client
 
-import net.ccbluex.liquidbounce.event.EventTarget
-import net.ccbluex.liquidbounce.event.UpdateEvent
 import net.ccbluex.liquidbounce.features.module.Module
 import net.ccbluex.liquidbounce.features.module.ModuleCategory
 import net.ccbluex.liquidbounce.ui.client.gui.music.GuiMusicPlayer
@@ -13,8 +11,7 @@ object MusicPlayerModule : Module(
     keyBind = Keyboard.KEY_M,
     canEnable = false
 ) {
-    @EventTarget
-    fun onUpdate(event: UpdateEvent) {
+    override fun onEnable() {
         mc.displayGuiScreen(GuiMusicPlayer())
         state = false
     }
