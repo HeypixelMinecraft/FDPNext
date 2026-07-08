@@ -358,7 +358,7 @@ class GuiMusicPlayer : GuiScreen() {
         // 当前播放歌曲标题（专辑封面下方）
         val songTitle = musicManager.songTitle.ifEmpty { "Jello Music" }
         SigmaMusicTextHelper.drawString(
-            truncateText(songTitle, 14, TAB_WIDTH - 30),
+            truncateText(songTitle, 14f, TAB_WIDTH - 30),
             barX + 15, barY + 20,
             SigmaMusicResources.LIGHT_GREYISH_BLUE,
             SigmaMusicResources.helveticaLight14(), 14f

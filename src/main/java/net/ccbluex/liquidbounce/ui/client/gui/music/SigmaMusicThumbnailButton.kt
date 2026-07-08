@@ -56,7 +56,7 @@ class SigmaMusicThumbnailButton(
         val title = track.title
         val font = SigmaMusicResources.helveticaLight14()
         SigmaMusicTextHelper.drawString(
-            truncateText(title, 14, (width - 16).toInt()),
+            truncateText(title, 14f, (width - 16).toInt()),
             x + 8, titleY, SigmaMusicResources.LIGHT_GREYISH_BLUE, font, 14f
         )
 
@@ -64,7 +64,7 @@ class SigmaMusicThumbnailButton(
         if (track.artist.isNotEmpty()) {
             val artistFont = SigmaMusicResources.helveticaLight14()
             SigmaMusicTextHelper.drawString(
-                truncateText(track.artist, 12, (width - 16).toInt()),
+                truncateText(track.artist, 12f, (width - 16).toInt()),
                 x + 8, titleY + 20, SigmaMusicResources.TEXT_SECONDARY, artistFont, 12f
             )
         }
