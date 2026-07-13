@@ -6,6 +6,7 @@
 package net.ccbluex.liquidbounce.ui.client.hud.element.elements
 
 import net.ccbluex.liquidbounce.FDPNext
+import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura
 import net.ccbluex.liquidbounce.features.value.*
 import net.ccbluex.liquidbounce.font.FontLoaders
 import net.ccbluex.liquidbounce.ui.client.hud.designer.GuiHudDesigner
@@ -17,6 +18,7 @@ import net.ccbluex.liquidbounce.ui.client.hud.element.elements.targets.utils.Par
 import net.ccbluex.liquidbounce.ui.client.hud.element.elements.targets.utils.ShapeType
 import net.ccbluex.liquidbounce.ui.font.Fonts
 import net.ccbluex.liquidbounce.utils.AnimationUtils
+import net.ccbluex.liquidbounce.utils.EntityUtils
 import net.ccbluex.liquidbounce.utils.PlayerUtils
 import net.ccbluex.liquidbounce.utils.extensions.*
 import net.ccbluex.liquidbounce.utils.misc.RandomUtils
@@ -203,6 +205,12 @@ open class Targets : Element(-46.0, -40.0, 1F, Side(Side.Horizontal.MIDDLE, Side
     }
 
     override fun drawElement(partialTicks: Float): Border? {
+        // Vape is immediate and fixed below the crosshair, so it does not use the
+        // animated recently-attacked target handling shared by the other styles.
+        if (modeValue.get().equals("Vape", true)) {
+            return drawVapeElement()
+        }
+
         var target = FDPNext.combatManager.target
         val time = System.currentTimeMillis()
         val pct = (time - lastUpdate) / (switchAnimSpeedValue.get() * 50f)
@@ -348,39 +356,84 @@ open class Targets : Element(-46.0, -40.0, 1F, Side(Side.Horizontal.MIDDLE, Side
 
     }
 
-    private fun drawVape(target: EntityLivingBase) {
+    private fun drawVapeElement(): Border? {
+        val target = if (mc.currentScreen is GuiHudDesigner) {
+            mc.thePlayer
+        } else {
+            findVapeTarget()
+        }
+
+        if (target == null || !target.isEntityAlive || target.isDead) {
+            prevTarget = null
+            displayPercent = 0F
+            return null
+        }
+
+        prevTarget = target
+        displayPercent = 1F
+        animProgress = 0F
+        return drawVape(target)
+    }
+
+    private fun findVapeTarget(): EntityPlayer? {
+        val killAuraTarget = FDPNext.moduleManager[KillAura::class.java]
+            ?.takeIf { it.state }
+            ?.currentTarget as? EntityPlayer
+
+        if (killAuraTarget != null && isValidVapeTarget(killAuraTarget)) {
+            return killAuraTarget
+        }
+
+        val aimedTarget = mc.objectMouseOver?.entityHit as? EntityPlayer
+        return aimedTarget?.takeIf(::isValidVapeTarget)
+    }
+
+    private fun isValidVapeTarget(target: EntityPlayer): Boolean {
+        return target !== mc.thePlayer && target.isEntityAlive && !target.isDead &&
+            EntityUtils.isSelected(target, true)
+    }
+
+    private fun drawVape(target: EntityLivingBase): Border {
         val font = fontValue.get()
         val health = target.health
         val maxHealth = target.maxHealth
-        val healthPct = (health / maxHealth).coerceIn(0f, 1f)
+        val healthPct = if (maxHealth > 0F) (health / maxHealth).coerceIn(0F, 1F) else 0F
         val distance = mc.thePlayer.getDistanceToEntityBox(target)
 
-        // Line 1: Name + Distance (white text)
-        val nameText = target.name
-        val distText = " ${decimalFormat.format(distance)}m"
-        font.drawString(nameText, 0, 0, Color.WHITE.rgb)
-        font.drawString(distText, font.getStringWidth(nameText), 0, Color(180, 180, 180).rgb)
+        val resolution = ScaledResolution(mc)
+        val centerX = resolution.scaledWidth / (2F * scale) - renderX.toFloat()
+        val topY = resolution.scaledHeight / (2F * scale) + 12F / scale - renderY.toFloat()
 
-        // Line 2: 2D skin head
-        val headY = font.FONT_HEIGHT + 4
+        // Preserve the scoreboard/team prefix and reset the distance to white.
+        val title = "${target.displayName.formattedText}\u00a7r\u00a7f ${decimalFormat3.format(distance)}m"
+        val titleWidth = font.getStringWidth(title)
+        val barMaxWidth = 64F
         val headSize = 28
-        RenderUtils.quickDrawHead(target.skin, 0, headY, headSize, headSize)
+        val contentWidth = maxOf(titleWidth.toFloat(), barMaxWidth, headSize.toFloat())
+        val left = centerX - contentWidth / 2F
 
-        // Line 3: Thin health bar
-        val barY = headY + headSize + 3
-        val barMaxWidth = 60
-        val barHeight = 2
+        font.drawString(title, (centerX - titleWidth / 2F).roundToInt(), topY.roundToInt(), Color.WHITE.rgb)
 
-        // Health bar background (subtle dark)
-        RenderUtils.drawRect(0F, barY.toFloat(), barMaxWidth.toFloat(), (barY + barHeight).toFloat(), Color(0, 0, 0, 80).rgb)
+        val headY = topY + font.FONT_HEIGHT + 4F
+        RenderUtils.quickDrawHead(
+            target.skin,
+            (centerX - headSize / 2F).roundToInt(),
+            headY.roundToInt(),
+            headSize,
+            headSize
+        )
 
-        // Health bar fill (green)
-        val barColor = when {
-            healthPct > 0.6f -> Color(0, 200, 80)
-            healthPct > 0.3f -> Color(255, 200, 0)
-            else -> Color(255, 50, 50)
-        }
-        RenderUtils.drawRect(0F, barY.toFloat(), (barMaxWidth * healthPct).toFloat(), (barY + barHeight).toFloat(), barColor.rgb)
+        val barY = headY + headSize + 3F
+        val barLeft = centerX - barMaxWidth / 2F
+        RenderUtils.drawRect(
+            barLeft,
+            barY,
+            barLeft + barMaxWidth * healthPct,
+            barY + 2F,
+            Color(46, 204, 113).rgb
+        )
+
+        return Border(left, topY, left + contentWidth, barY + 2F)
     }
 
     private fun drawAstolfo(target: EntityLivingBase) {
@@ -1952,7 +2005,8 @@ open class Targets : Element(-46.0, -40.0, 1F, Side(Side.Horizontal.MIDDLE, Side
         return when (modeValue.get().lowercase()) {
             "astolfo" -> Border(0F, 0F, 140F, 60F)
             "astolfo2" -> Border(0F, 0F, 160F, 60F)
-            "vape" -> Border(0F, 0F, 110F, 40F)
+            // Vape returns its exact centered border directly from drawVape.
+            "vape" -> null
             "liquid" -> Border(0F, 0F, (38 + mc.thePlayer.name.let(Fonts.font40::getStringWidth)).coerceAtLeast(118).toFloat(), 36F)
             "fdp" -> Border(0F, 0F, 150F, 47F)
             "flux" -> Border(0F, 0F, (38 + mc.thePlayer.name.let(Fonts.font40::getStringWidth))
